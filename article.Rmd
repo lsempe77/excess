@@ -5,6 +5,7 @@ author:
 - Ramón Martínez^[Pan American Health Organisation]
 - Shah Ebrahim^[London School of Hygiene and Tropical Medicine]
 - Martin McKee^[London School of Hygiene and Tropical Medicine]
+- Enrique Acosta ^[Max Plank Institute for Demographich Research]
 - Lucas Sempé^[University of East Anglia - email:l.sempe@uea.ac.uk]
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
@@ -27,7 +28,7 @@ includes:
 
 knitr::opts_chunk$set(echo = FALSE, warning = F,
                       message = F, tinytex.verbose = TRUE,
-  cache = F,fig.width = 7,fig.height = 3.5, 
+  cache = F,fig.width = 7,fig.height = 5, 
   digits = 1, OutDec = ",")
 
 options(scipen = 1, digits = 3)
@@ -127,7 +128,7 @@ We use negative binomial regression models to estimate excess registered mortali
 
 ## Findings {.unnumbered}
 
-We estimate national under-registration of mortality to be `r pm`% (95% CI `r pmu`% - `r pml`%). We estimate total all-cause excess were registered during the period of analysis to be `r et` (95% CI  `r etl` - `r etu`) of which `r er` (95% CI  `r erl` - `r eru`) are excess registered deaths. Mortality in people aged 60 years and over accounts for `r age60t`% (95% CI `r age60u`% - `r age60l`%) of total excess deaths for both models, while there were fewer deaths than expected in younger age groups. Lima region, on the Pacific coast and including the national capital, accounts for `r limat` (95% CI  `r limal` - `r limau`) excess deaths, while the regions of Apurimac and Pasco, in the Andes, account for less than 400 deaths.
+We estimate national under-registration of mortality to be `r pm`% (95% CI `r pml`% - `r pmu`%). We estimate total all-cause excess were registered during the period of analysis to be `r et` (95% CI  `r etl` - `r etu`) of which `r er` (95% CI  `r erl` - `r eru`) are excess registered deaths. Mortality in people aged 60 years and over accounts for `r age60t`% (95% CI `r age60l`% - `r age60u`%) of total excess deaths for both models, while there were fewer deaths than expected in younger age groups. Lima region, on the Pacific coast and including the national capital, accounts for `r limat` (95% CI  `r limal` - `r limau`) excess deaths, while the regions of Apurimac and Pasco, in the Andes, account for less than 400 deaths.
 
 ## Interpretation {.unnumbered}
 
@@ -159,7 +160,7 @@ In the absence of good data on these different mortality effects, robust estimat
 
 Excess mortality estimates have been computed for high-income countries based on registered deaths by surveillance agencies[@Vestegaard2020;@Rossen2020], academia[@Woolf2020;@Weinberger2020;@Vandoros2020;@Michelozzi2020] and news agencies [@Roser2020;@FT2020;@NYTIMES2020;@Economist2020]. However, these types of data are often incomplete or inaccurate, especially in many low and middle-income countries (LMICs). The Global Burden Disease (GBD) project estimates that only 64% of global deaths were registered in 2015 [@Dicker2018]. In most LMICs, responsibility for mortality data is often divided between different national and subnational agencies [@Cobos2020]. This can cause extended delays in national reporting and discrepancies between different sources [@Weinberger2020;@Iburg2020]. Disaggregation of summary data by different geographical areas or demographic groups is usually very limited [@Adair2020]. These shortcomings in mortality data explain a lack of published studies of excess mortality in LMICs [@Jha2014;@Setel2020]. 
 
-We analyse excess mortality associated with the first wave of the COVID-19 pandemic in Peru. This country is well-suited to our analytical approach. Like much of Latin America, Peru has experienced high levels of COVID-19 mortality. Official sources report 37,723 deaths directly caused by COVID-19 between 18 March and December 31 2020. However, these only include cases with  positive COVID-19 test results and rates of testing in Peru have been low compared to other Latin American countries [@Benitez2020]. Also, many tests have used low sensitivity devices, potentially generating false negatives [@Yanez2020]. Anonymized individual level data for mortality and COVID-19 are in the public domain in Peru. Also, the progressive implementation of electronic registration of deaths in recent years enables comparisons of spatial and temporal trends in death registration [@CRVS2018]. Other studies show unregistered mortality tends to be more prevalent among older people and in poorer regions [@Lloyd2020;@Adair2018].However, as in many LMICs, Peru does not report sub-national data disaggregated by age.  
+We analyse excess mortality associated with the first wave of the COVID-19 pandemic in Peru. This country is well-suited to our analytical approach. Like much of Latin America, Peru has experienced high levels of COVID-19 mortality. Official sources report 37,723 deaths directly caused by COVID-19 between 18 March and December 31 2020. However, these only include cases with  positive COVID-19 test results and rates of testing in Peru have been low compared to other Latin American countries [@Benitez2020]. Also, many tests have used low sensitivity devices, potentially generating false negatives [@Yanez2020]. Anonymised individual level data for mortality and COVID-19 are in the public domain in Peru. Also, the progressive implementation of electronic registration of deaths in recent years enables comparisons of spatial and temporal trends in death registration [@CRVS2018]. Other studies show unregistered mortality tends to be more prevalent among older people and in poorer regions [@Lloyd2020;@Adair2018].However, as in many LMICs, Peru does not report sub-national data disaggregated by age.  
 
 Potentially, our analytical design could be applied to other countries where mortality registration and cause of death data are very incomplete. It may offer a valuable contribution towards assessing the true global impact of the COVID-19 pandemic.
 
@@ -187,7 +188,7 @@ node [shape = box]
 
 
 node [shape = diamond]
-   NegBinomReg;LogitReg;
+   LogitReg;
 
 node [shape = circle]
 
@@ -217,7 +218,7 @@ ExcessTOTAL->TotalDeaths
 ```
   
 
-To estimate the first term, excess registered deaths, we fit quasiPoisson regressions to weekly deaths since 2017 by age-groups and region, as follows:
+To estimate the first term, excess registered deaths, we fit quasi-Poisson regressions to weekly deaths since 2017 by age-groups and region, as follows:
 
 $$\begin{equation}
   \begin{aligned}
@@ -228,7 +229,7 @@ $$\begin{equation}
    \end{aligned}  
 \end{equation}$$
 
-where we fit a natural cubic B-spline function $\phi_{k}(\text{Week})$ on weeks to address long-term trends and seasonality [@Currie2004]. We include each year $\text{Year}$, lagged residuals $\epsilon_{t-1}$ and the log of population in 2020 as an offset. Finally, we compute a dichotomous variable starting in the week corresponding to March 16 2020 as the first registered case of COVID-19 in the country.
+where we fit a natural cubic B-spline function $\phi_{k}(\text{Week})$ on weeks to address long-term trends and seasonality [@Currie2004] and $\text{Year}$ to deal with registration growth. Additionally, we use lagged residuals $\epsilon_{t-1}$ and the log of population in 2020 as an offset. Finally, we compute a dichotomous variable starting in the week corresponding to March 16 2020 as the first registered case of COVID-19 in the country.
 
 Secondly, we compute the population attributable fraction[@Steenland2006] based on the relative risk $\text{RR}$ from parameter $\beta_1$, as follows:
 
@@ -240,7 +241,7 @@ $$\begin{equation}\label{eq:rr}
                         
 where $\text{n}$ is the weekly number of deaths [@Gasparrini2014], computed cumulatively over time. 
 
-To estimate our second term, we follow @Adair2018 to predict the logit of death registration completeness for years 2017 and 2019 (due to data availability). We exploit variability in terms of mortality rates, population over 60 and rurality to address potential differences in tems of registration completeness. We model random-effects regressions by regions using the equation: 
+To estimate our second term, we follow @Adair2018 to predict the logit of death registration completeness for years 2017 and 2019 (due to data availability). We exploit variability in terms of mortality rates, population over 60 and rurality to address potential differences in terms of registration completeness. We model random-effects regressions by regions using the equation: 
 
 $$\begin{equation}\label{eq:adair}
 \begin{aligned}
@@ -258,7 +259,7 @@ $$\begin{equation}\label{eq:adair}
 \end{aligned}
 \end{equation}$$
 
-where $\text{RegCDR}$ and $\text{RegCDR}^2$ are the Crude Death Rates based on the Registration System, $\text{complete < 5}$ is the completeness registration rate for infants, $log(\text{5q0})$ is the logaritm under-five mortality rate and $\text{+60}$ represents the fraction of the population over 60. $\text{LPG}$ is the share of households that use liquefied petroleum gas (LPG) for cooking, which is an important proxy of rurarity in Peru, where 81.8% of rural households primarily use solid fuel compared to 9.8% of urban households, who typically cook with LPG [@Pollard2018]. Rurality is an important factor to explain delays and underregistration of deaths as the system requires access to internet and computers. Adittionally, $\epsilon_{jk}$ in the error term and $\gamma_{j}$ is the region-level random effect. 
+where $\text{RegCDR}$ and $\text{RegCDR}^2$ are the Crude Death Rates based on the Registration System, $\text{complete < 5}$ is the completeness registration rate for infants, $log(\text{5q0})$ is the logarithm under-five mortality rate and $\text{+60}$ represents the fraction of the population over 60. $\text{LPG}$ is the share of households that use liquefied petroleum gas (LPG) for cooking, which is an important proxy of rurality in Peru, where 81.8% of rural households primarily use solid fuel compared to 9.8% of urban households, who typically cook with LPG [@Pollard2018]. Rurality is an important factor to explain delays and underregistration of deaths as the system requires access to internet and computers. Additionally, $\epsilon_{jk}$ in the error term and $\gamma_{j}$ is the region-level random effect. 
 
 Then, we compute the completeness of deaths registration, $\widehat{\text{Completeness}}$ using the inverse logit of the predicted values, which allows and $\widehat{{\text{Excess}}_\text{Reg}}$ equation \@ref(eq:rr), as follows:
 
@@ -282,7 +283,7 @@ $$\begin{equation} \label{covidnotreg}
 \end{equation}$$
 
 
-Finally, we estimate total excess deaths for different scenarios. A first scenario is when there is no solid evidence suggesting under-registration of deaths for some regions or age groups and, therefore, no scope to expand registration over time. This usually occurs in areas with very small populations. In those cases $\widehat{\mu}_{\text{Deaths}_\text{Not reg}}$ is set to 0 as, if not, they would add negative values to the sum. A second scenario is when some groups have fewer deaths than expected, due to effects such as reduced road traffic injuries caused by lockdowns. In these groups  $\widehat{{\text{Excess}}_\text{Reg}}\le 0$ is taken account of in our final estimates. A third scneario is related to younger age groups in some regions that have not be significantly affected by COVID-19 mortality. This case corresponds to when ${\beta_{1}}$ in equation \@ref(eq:nb) is not statistically significant and therefore we set $\widehat{{\text{Excess}}_\text{Reg}} = 0$.
+Finally, we estimate total excess deaths for different scenarios. A first scenario is when there is no solid evidence suggesting under-registration of deaths for some regions or age groups and, therefore, no scope to expand registration over time. This usually occurs in areas with very small populations. In those cases $\widehat{\mu}_{\text{Deaths}_\text{Not reg}}$ is set to 0 as, if not, they would add negative values to the sum. A second scenario is when some groups have fewer deaths than expected, due to effects such as reduced road traffic injuries caused by lockdowns. In these groups  $\widehat{{\text{Excess}}_\text{Reg}}\le 0$ is taken account of in our final estimates. A third scenario is related to younger age groups in some regions that have not be significantly affected by COVID-19 mortality. This case corresponds to when ${\beta_{1}}$ in equation \@ref(eq:nb) is not statistically significant and therefore we set $\widehat{{\text{Excess}}_\text{Reg}} = 0$.
 
  Equation \@ref(eq:finale) summarises the estimation of $\widehat{\text{Excess}}_{\text{T}_{\text{min/mean/max}}}$ as follows:
 
@@ -315,7 +316,7 @@ ggplot() + geom_sf(data = DEPS,aes(fill=sub.mean),size=.01,colour="white")+
   scale_fill_viridis_c(name = "Completeness registration (%)",
                        direction=-1)+
   geom_sf_text(data=DEPS,aes(label = Departamento),size=2)+
-  theme(legend.position = "right",
+  theme(legend.position = "bottom",
    axis.title=element_blank(),
         axis.text=element_blank(),
         axis.ticks=element_blank(),
@@ -323,7 +324,7 @@ ggplot() + geom_sf(data = DEPS,aes(fill=sub.mean),size=.01,colour="white")+
 
 ```
 
-Table \@ref(tab:summary) summarises estimations for our computation of excess mortality. Turning to the first term of our excess mortality calculation, excess registered deaths, the negative binomial models generally fitted well the number of daily deaths across models. Excess registered deaths is estimated to be `r ex.reg`, while `r covid.oficial` are reported officialy as COVID-19 deaths. This represents an increase of `r ex.reg.covid`. 
+Table \@ref(tab:summary) summarises estimations for our computation of excess mortality. Turning to the first term of our excess mortality calculation, excess registered deaths, the negative binomial models generally fitted well the number of daily deaths across models. Excess registered deaths is estimated to be `r ex.reg`, while `r covid.oficial` are reported officially as COVID-19 deaths. This represents an increase of `r ex.reg.covid`. 
 
 ```{r summary}
 
@@ -389,13 +390,15 @@ Our second term, excess unregistered deaths, is estimated to be `r ex.unreg`. Th
 Combining all these terms, our estimate of total excess deaths during 2020 is `r e.total` and our estimate of total deaths for 2020 is `r total`. This is `r excess.pct.t` more than projected deaths by INEI for 2020. 
 
 Figure \@ref(fig:map2) shows age-standardised rates per 1,000 people by direct standardization methods [@Curtin1995], using INEI estimates as the standard population.  We find that `r adj.rates.mores` present the highest rates ranging from `r min` to `r max`, while regions of `r adj.rates.less` show the lowest rates ranging from `r min2` to `r max2`.
-We find that `r dif`` shows `r dif.n` deaths per 1000 in comparison to INEI's projections for 2020, which suggests INEI's overestimations of mortality rates. ***This affects our estimation of completeness.***
+We find that `r dif`` shows `r dif.n` deaths per 1000 in comparison to INEI's projections for 2020, which suggests INEI's overestimations of mortality rates. 
+
+<!-- ***This affects our estimation of completeness.*** -->
 
 ``` {r map2, fig.cap="Mortality rates"}
 
 ggplot() + geom_sf(data = DEPS,
                        aes(fill=adj.rate),size=.01,colour="white")+ 
-  theme(panel.background = element_rect(fill = 'white')) +
+  theme(panel.background = element_rect(fill = 'white'),legend.position="bottom") +
   scale_fill_viridis_c( direction=1,option = "plasma")+
   geom_sf_text(data=DEPS,aes(label = Departamento),size=2)+
   theme_map()+
@@ -407,7 +410,7 @@ ggplot() + geom_sf(data = DEPS,
 
 # Discussion
 
-The COVID-19 pandemic has underscored the need for methodological advances in population health measurement, research, critical data quality assessment and improvement of health information systems to obtain reliable information on the impact of the pandemic from multiple data sources linked to COVID-19. In this regards, our study provides a framework, tools and analytical strategy to estimate the excess mortality caused by the COVID-19 pandemic in Peru and, potentially, other countries where the quality of mortality data is medium to lower [@Mikkelsen2015]. The scope for applying a similar approach will vary between countries. In countries such as India, where mortality and cause of death data are of very low quality considerably lower  than in Peru, achieving robust estimates by any method will be hugely challenging [@@Gupta2016]. In other countries, such asted, than Brazil, data quality is similar to Peru’s and a recent reform to its CRVS system is likely to have boosted registration rates where they are relatively complete [@McLaughlin2019;@Queiroz2017].
+The COVID-19 pandemic has underscored the need for methodological advances in population health measurement, research, critical data quality assessment and improvement of health information systems to obtain reliable information on the impact of the pandemic from multiple data sources linked to COVID-19. In this regards, our study provides a framework, tools and analytical strategy to estimate the excess mortality caused by the COVID-19 pandemic in Peru and, potentially, other countries where the quality of mortality data is medium to lower [@Mikkelsen2015]. The scope for applying a similar approach will vary between countries. In countries such as India, where mortality and cause of death data are of very low quality considerably lower  than in Peru, achieving robust estimates by any method will be hugely challenging [@@Gupta2016]. In other countries, such as Brazil, data quality is similar to Peru’s and a recent reform to its CRVS system is likely to have boosted registration rates where they are relatively complete [@McLaughlin2019;@Queiroz2017].
 
 Other published studies of excess COVID-19 mortality fall into two categories. Some studies provide estimates for countries where mortality data are relatively complete and reliable [@Banerjee2020; @Kontis2020; @Vestergaard2020; @Rivera2020]. As such, they do not apply specific methods to address data gaps. Studies of excess COVID-19 mortality for countries with less complete data do not take unregistered deaths [@Tadbiri2020;@Freitas2020;@Cevallos2020]. 
 
@@ -446,7 +449,7 @@ performance_mse(fit1)
 ```
 
 
-### Quasi Poisson models
+### Quasi-Poisson models
 
 ```{r, fite,results='asis'}
 
@@ -498,7 +501,7 @@ propreg %>% print (n=25)
 
 ```
 
-### Population 2020 per regoin
+### Population 2020 per region
 ```{r}
 
 combined.pop.mort%>%

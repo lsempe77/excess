@@ -75,11 +75,11 @@ summary<-tateti.std.q %>%
             total.u=sum(total.u,na.rm = T))
 
 
-pander(t(summary),
-       caption = "(\\#tab:summary) Table 1: Summary of estimations, Peru, 2020.",
-       style = 'rmarkdown',
-       split.table = Inf,
-       round=1)
+# pander(t(summary),
+#        caption = "(\\#tab:summary) Table 1: Summary of estimations, Peru, 2020.",
+#        style = 'rmarkdown',
+#        split.table = Inf,
+#        round=1)
 
 ###
 
@@ -100,10 +100,10 @@ a<-summary %>%
                 `Total estimation deaths in 2020`)
 
 
-pander(t(a), caption = "(\\#tab:summary) Table 1: Summary of estimations, Peru, 2020.",
-       style = 'rmarkdown',
-       split.table = Inf,
-       round=1)
+# pander(t(a), caption = "(\\#tab:summary) Table 1: Summary of estimations, Peru, 2020.",
+#        style = 'rmarkdown',
+#        split.table = Inf,
+#        round=1)
 
 ###
 
@@ -183,7 +183,7 @@ pr1<-totalage %>% group_by(range) %>% summarise(ex.t.cum=cumsum(`Total excess (T
 
 ###
 
-glimpse(summary)
+#glimpse(summary)
 
 complete.covid<-tateti6.t %>% ungroup() %>%
   summarise(complete.c = sum(complete.covid))

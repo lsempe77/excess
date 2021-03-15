@@ -93,7 +93,7 @@ its.covid.list4d.t <- aaa %>% group_by(Departamento,range) %>%
 
 
 
-its.covid.list4d.t
+# its.covid.list4d.t
 
 # its.covid.list4d.t %>% filter(term=="covid") %>%
 #   mutate(excess=case_when(term!="covid" ~ NA_real_,
@@ -176,7 +176,6 @@ t5.t<-tateti6.t %>% ungroup() %>%
             excess.l=sum(excess.total.low,na.rm = T),
             excess.u=sum(excess.total.up,na.rm = T))
 
-t5.t
 
 #
 # ###
