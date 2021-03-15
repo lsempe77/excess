@@ -135,3 +135,6 @@ compare.estim.age<-pob.regiones.group.age.sex.2020%>%
 
 colnames(compare.estim.age)[2]<-"range"
 
+###
+
+population_regions <- read_excel("data/population_regions.xls.xlsx")

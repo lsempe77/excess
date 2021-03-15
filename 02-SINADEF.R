@@ -4,7 +4,8 @@
 
 #SINADEF - SOURCE: https://cloud.minsa.gob.pe/s/NctBnHXDnocgWAg - January 26 2021
 
-SINADEF <- read_excel("data/SINADEF_DATOS_ABIERTOS_26012021.xlsx",skip=3)
+SINADEF <- read_excel("data/SINADEF_DATOS_ABIERTOS_02032021.xlsx",skip=3)
+
 #SINADEF %>% glimpse()
 
 colnames(SINADEF)[10]<-"Departamento"

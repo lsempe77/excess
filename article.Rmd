@@ -93,31 +93,9 @@ source("06-model_subregistration.R", local = knitr::knit_global(),
 
 ```
 
-  
 ```{r excess-registered-deaths, eval=T, include=T,tinytex.verbose = TRUE}
 
 source("08-excess_registered.R", local = knitr::knit_global(),
-       encoding = "UTF-8")
-
-```
-
-```{r sinadef-growth-rate, eval=T, include=T,tinytex.verbose = TRUE}
-
-source("09-sinadef_growth_rate.R", local = knitr::knit_global(),
-       encoding = "UTF-8")
-
-```
-
-```{r covid-unregistered-deaths, eval=T, include=T,tinytex.verbose = TRUE}
-
-source("10-covid_unregistered_deaths.R", local = knitr::knit_global(),
-       encoding = "UTF-8")
-
-```
-
-```{r excess-total, eval=T, include=T,tinytex.verbose = TRUE}
-
-source("11-excess_total.R", local = knitr::knit_global(),
        encoding = "UTF-8")
 
 ```
@@ -141,7 +119,7 @@ source("14-data.R", local = knitr::knit_global(),
 
 ## Background  {.unnumbered}
 
-All-cause excess mortality is a comprehensive approach for esimating the direct and indirect effects of COVID-19 on mortality. Estimates are usually derived from Civil Registration and Vital Statistics (CRVS) systems, but these do not include non-registered deaths, which may be affected by changes in mortality registration coverage over time.  
+All-cause excess mortality is a comprehensive approach for estimating the direct and indirect effects of COVID-19 on mortality. Estimates are usually derived from Civil Registration and Vital Statistics (CRVS) systems, but these do not include non-registered deaths, which may be affected by changes in mortality registration coverage over time.  
 
 ## Methods {.unnumbered}
 
@@ -149,7 +127,7 @@ We use negative binomial regression models to estimate excess registered mortali
 
 ## Findings {.unnumbered}
 
-We estimate national under-registration of mortality to be `r pm`% (95% CI `r pmu`% - `r pml`%). We estimate total all-cause excess were registered during the period of analysis to be `r et` (95% CI  `r etl` - `r etu`) of which `r er` (95% CI  `r erl` - `r eru`) are excess registered deaths. Mortality in people aged 60 years and over accounts for `r age60t`% (95% CI `r age60u`% - `r age60l`%) of total excess deaths for both models, while there were fewer deaths than expected in younger age groups. Lima region, on the Pacific coast and including the national capital, accounts for `r limat` (95% CI  `r limal` - `r limau`) excess deaths, while the regions of Apurimac and Pasco, in the Andes, account for less than 200 deaths.
+We estimate national under-registration of mortality to be `r pm`% (95% CI `r pmu`% - `r pml`%). We estimate total all-cause excess were registered during the period of analysis to be `r et` (95% CI  `r etl` - `r etu`) of which `r er` (95% CI  `r erl` - `r eru`) are excess registered deaths. Mortality in people aged 60 years and over accounts for `r age60t`% (95% CI `r age60u`% - `r age60l`%) of total excess deaths for both models, while there were fewer deaths than expected in younger age groups. Lima region, on the Pacific coast and including the national capital, accounts for `r limat` (95% CI  `r limal` - `r limau`) excess deaths, while the regions of Apurimac and Pasco, in the Andes, account for less than 400 deaths.
 
 ## Interpretation {.unnumbered}
 
@@ -217,8 +195,8 @@ node [shape = circle]
 
   # several 'edge' statements
 
-SINADEF->NegBinomReg
-Population->NegBinomReg->ExcessReg
+SINADEF->QuasiPoissonReg
+Population->QuasiPoissonReg->ExcessReg
 SINADEF->DeathsReg
 
 SINADEF->LogitReg
@@ -239,16 +217,20 @@ ExcessTOTAL->TotalDeaths
 ```
   
 
-To estimate the first term, excess registered deaths, we fit negative binomial regressions with robust standard errors to daily deaths since 2018 by age and region. We fit a smoothing cubic B-spline function of deaths on days to address long-term trends and seasonality [@Currie2004]. We include population as an offset and the day of the week that the event occurred. Finally, we compute a dichotomous variable stating March 16 2020 as the first registered case of COVID-19.
+To estimate the first term, excess registered deaths, we fit quasiPoisson regressions to weekly deaths since 2017 by age-groups and region, as follows:
 
-$$\begin{equation}\label{eq:nb}
+$$\begin{equation}
   \begin{aligned}
-  log(\text{Deaths}_{i})=\beta_0+\beta_1\text{COVID-19}+\beta_2\text{Date}+\beta_3\text{Day of week}+
-  \text{log}(\text{Pop})+\sum_{k=2}^{40}\beta_k\text{Ci}_{k}(\text{Day})
+  log(\text{Deaths}_{i})=\beta_0+\beta_1\text{COVID-19}+\beta_2\text{Year}+
+  \beta_3\epsilon_{t-1}+
+  \sum\beta_k\phi_{k}(\text{Week})+
+  \text{log}(\text{Pop})+\epsilon_{t}
    \end{aligned}  
 \end{equation}$$
-    
-where $\text{Ci}_{k}(\text{Day})$ is a set of cubic B-splines ${\text{Ci}_{1}(\text{Day})},\dots,{\text{Ci}_{k}(\text{Day})}$ and $\beta_{k_{1}},\dots,\beta_{k_{40}}$ are the regression coefficients. Secondly, we compute the population attributable fraction[@Steenland2006] based on the relative risk $\text{RR}$ from parameter $\beta_1$, as follows:
+
+where we fit a natural cubic B-spline function $\phi_{k}(\text{Week})$ on weeks to address long-term trends and seasonality [@Currie2004]. We include each year $\text{Year}$, lagged residuals $\epsilon_{t-1}$ and the log of population in 2020 as an offset. Finally, we compute a dichotomous variable starting in the week corresponding to March 16 2020 as the first registered case of COVID-19 in the country.
+
+Secondly, we compute the population attributable fraction[@Steenland2006] based on the relative risk $\text{RR}$ from parameter $\beta_1$, as follows:
 
 $$\begin{equation}\label{eq:rr}
 \begin{aligned}
@@ -256,7 +238,7 @@ $$\begin{equation}\label{eq:rr}
 \end{aligned}
 \end{equation}$$
                         
-where $\text{n}$ is the daily number of deaths [@Gasparrini2014], computed cumulatively over time. 
+where $\text{n}$ is the weekly number of deaths [@Gasparrini2014], computed cumulatively over time. 
 
 To estimate our second term, we follow @Adair2018 to predict the logit of death registration completeness for years 2017 and 2019 (due to data availability). We exploit variability in terms of mortality rates, population over 60 and rurality to address potential differences in tems of registration completeness. We model random-effects regressions by regions using the equation: 
 
@@ -299,9 +281,10 @@ $$\begin{equation} \label{covidnotreg}
     \end{cases} 
 \end{equation}$$
 
- <!-- First, younger age groups in some regions may not be significantly affected by COVID-19 mortality. This case corresponds to when ${\beta_{1}}$ in equation \@ref(eq:nb) is not statistically significant and therefore we set $\widehat{{\text{Excess}}_\text{Reg}} = 0$. -->
 
-Finally, we estimate total excess deaths for different scenarios. A first scenario is when there is no solid evidence suggesting under-registration of deaths for some regions or age groups and, therefore, no scope to expand registration over time. This usually occurs in areas with very small populations. In those cases $\widehat{\mu}_{\text{Deaths}_\text{Not reg}}$ is set to 0 as, if not, they would add negative values to the sum. A second scenario is when some groups have fewer deaths than expected, due to effects such as reduced road traffic injuries caused by lockdowns. In these groups  $\widehat{{\text{Excess}}_\text{Reg}}\le 0$ is taken account of in our final estimates. Equation \@ref(eq:finale) summarises the estimation of $\widehat{\text{Excess}}_{\text{T}_{\text{min/mean/max}}}$ as follows:
+Finally, we estimate total excess deaths for different scenarios. A first scenario is when there is no solid evidence suggesting under-registration of deaths for some regions or age groups and, therefore, no scope to expand registration over time. This usually occurs in areas with very small populations. In those cases $\widehat{\mu}_{\text{Deaths}_\text{Not reg}}$ is set to 0 as, if not, they would add negative values to the sum. A second scenario is when some groups have fewer deaths than expected, due to effects such as reduced road traffic injuries caused by lockdowns. In these groups  $\widehat{{\text{Excess}}_\text{Reg}}\le 0$ is taken account of in our final estimates. A third scneario is related to younger age groups in some regions that have not be significantly affected by COVID-19 mortality. This case corresponds to when ${\beta_{1}}$ in equation \@ref(eq:nb) is not statistically significant and therefore we set $\widehat{{\text{Excess}}_\text{Reg}} = 0$.
+
+ Equation \@ref(eq:finale) summarises the estimation of $\widehat{\text{Excess}}_{\text{T}_{\text{min/mean/max}}}$ as follows:
 
 $$\begin{equation}(\#eq:finale)
   \begin{aligned}
@@ -323,7 +306,7 @@ $$\begin{equation} \label{totalmort}
 
 # Results 
 
-The logistic regression fits wells the data according to $\text{R}^2$ and Root Mean Square of Errors. Model fit and goodness-of-fit is presented in Appendix 1. Figure \@ref(fig:map) shows important variations at regional completeness rates: Amazonas and Loreto, in the Amazon, Lambayeque, on the coast, and Cajamarca and Pasco, in the Andes show estimated completion of below 40%, while Ica in the coast and Madre De Dios in the Amazon -the less populated region-  achieve values that suggested full registration completeness (see Appendix 1). 
+The estimations of completeness registration through the logistic regression model fits well the data according to $\text{R}^2$ and Root Mean Square of Errors. Model fit and goodness-of-fit is presented in Appendix 1. Figure \@ref(fig:map) shows important variations at regional completeness rates: Amazonas and Loreto, in the Amazon, Lambayeque, on the coast, and Cajamarca and Pasco, in the Andes show estimated completion of below 40%, while Ica in the coast and Madre De Dios in the Amazon -the less populated region-  achieve values that suggested full registration completeness (see Appendix 1). 
 
 ```{r map,fig.cap="Completeness registration", warning=FALSE,message=FALSE}
 
@@ -331,7 +314,7 @@ ggplot() + geom_sf(data = DEPS,aes(fill=sub.mean),size=.01,colour="white")+
   theme(panel.background = element_rect(fill = 'white')) +
   scale_fill_viridis_c(name = "Completeness registration (%)",
                        direction=-1)+
-  geom_sf_text(data=DEPS,aes(label = NOMBDEP),size=2)+
+  geom_sf_text(data=DEPS,aes(label = Departamento),size=2)+
   theme(legend.position = "right",
    axis.title=element_blank(),
         axis.text=element_blank(),
@@ -340,23 +323,25 @@ ggplot() + geom_sf(data = DEPS,aes(fill=sub.mean),size=.01,colour="white")+
 
 ```
 
-Table \@ref(tab:summary) summarises estimations for our computation of excess mortality. Turning to the first term of our excess mortality calculation, excess registered deaths, the negative binomial models generally fitted well the number of daily deaths across models. Excess registered deaths is estimated to be 102,109 deaths (95% CI 91,179 - 110,115). This is 170.7% (CI 95% 141.7% - 191.9%) more mortality official COVID-19 deaths.
+Table \@ref(tab:summary) summarises estimations for our computation of excess mortality. Turning to the first term of our excess mortality calculation, excess registered deaths, the negative binomial models generally fitted well the number of daily deaths across models. Excess registered deaths is estimated to be `r ex.reg`, while `r covid.oficial` are reported officialy as COVID-19 deaths. This represents an increase of `r ex.reg.covid`. 
 
 ```{r summary}
 
-summary <- read_excel("data/summary.xlsx")
 
-pander(summary, caption = "(\\#tab:summary) Table 1: Summary of estimations, Peru, 2020.", style = 'rmarkdown', split.table = Inf,
+pander(t(a), caption = "(\\#tab:summary) Summary of estimations, Peru, 2020.", 
+       style = 'rmarkdown', 
+       split.table = Inf,
        round=1)
+
 
 ```
 
-Table \@ref(tab:exineidepq) shows estimates by region. Lima, which includes the capital, accounts for  77,277 (95% CI 75,616 – 78,680) of total excess deaths, Apurimac, Pasco, Madre De Dios and Huacavelica show the lowest number of deaths. Table \@ref(tab:exineiageq) shows excess mortality estimates by age group. Deaths among people aged 60 years and over accounts for 76.4% of total excess mortality. There was negative excess registered mortality for people aged under 9.
+Table \@ref(tab:exineidepq) shows estimates by region. Lima, which includes the capital, accounts for  `r lima.total` total excess deaths, and `r menos5` show the lowest number of deaths. Table \@ref(tab:exineiageq) shows excess mortality estimates by age group. Deaths among people aged 60 years and over accounts for `r pr1`% of total excess mortality. There was negative excess registered mortality for age groups under 9 and 10 to 19.
 
 
 ```{r exineidepq,results='asis'}
 
-exineidep.q<-tateti6%>%group_by(Departamento) %>%   
+exineidep.q<-tateti6.t%>%group_by(Departamento) %>%   
    summarise(`Total excess (TE)`=sum(excess.total.mean,na.rm = T),
             `TE - Lower CI 95%`=sum(excess.total.low,na.rm = T),
             `TE - UpperCI 95%`=sum(excess.total.up,na.rm = T),
@@ -378,7 +363,7 @@ pander(exineidep.q[1:8], caption = "(\\#tab:exineidepq)Estimated total excess de
 
 ```{r exineiageq,results='asis'}
 
-exineiageq<-tateti6%>%group_by(range) %>%   
+exineiageq<-tateti6.t%>%group_by(range) %>%   
   summarise(`Total excess (TE)`=sum(excess.total.mean,na.rm = T),
             `TE - Lower CI 95%`=sum(excess.total.low,na.rm = T),
             `TE - UpperCI 95%`=sum(excess.total.up,na.rm = T),
@@ -399,34 +384,22 @@ pander(exineiageq[1:8], caption = "(\\#tab:exineiageq) Estimated total excess de
 
 ```
 
-Our second term, excess unregistered deaths, is estimated to be 38,630 (95% CI  34,994 - 41,285). This represents 39.7% (95% CI 39.2%- 40.5%) additional deaths compared to estimates based only on registered deaths. Coastal regions show the highest values where Lima accounts for 22,809 additional deaths, followed by Piura (3,552) and Lambayeque (3,459). Our third term adds 1,919 deaths corresponding to cases when reported COVID-19 deaths exceed our estimate of adjusted excess registered mortality. This mainly occurs for some smaller groups in younger age groups. The regions with the highest under reported COVID-19 values are Ayacucho (241), Apurimac (193) and Lima (160). 
+Our second term, excess unregistered deaths, is estimated to be `r ex.unreg`. This represents `r ex.unreg.pc` additional deaths compared to estimates based only on registered deaths. Coastal regions show the highest values where Lima accounts for `r lima.more` additional deaths, followed by Piura (`r piura.more`) and Lambayeque (`r lamba.more`). Our third term adds `r complete.covid` deaths corresponding to cases when reported COVID-19 deaths exceed our estimate of adjusted excess registered mortality. This mainly occurs for some smaller groups in younger age groups. The regions with the highest under reported COVID-19 values are in Andean regions of Ayacucho (`r ayacucho.covid`), Cajamarca and Puno (both with `r puno.covid`).
 
-Combining all these terms, our estimate of total excess deaths during 2020 is 	142,658 (95% CI  128,092 - 153,319) and our estimate of total deaths for 2020 is 288,674 (CI 95% 263,447 – 313,902). This is 50.8% (CI 95% 37.6% - 64.0%) more than projected deaths by INEI for 2020. 
+Combining all these terms, our estimate of total excess deaths during 2020 is `r e.total` and our estimate of total deaths for 2020 is `r total`. This is `r excess.pct.t` more than projected deaths by INEI for 2020. 
 
-Figure  shows crude mortality rates per 1,000 people for 2020. Crude rates are higher in the coastal regions of Lima, Callao, Moquegua and Ica. It is lower in Amazonas region and Andean regions such as Ayacucho, Cajamarca, Huancavelica and Pasco. Figure \@ref(fig:map2) (right) shows age-standardised rates per 1,000 people by direct method of  standardisation , using INEI official estimations for year 2020 as the standard population. We find that Madre De Dios, Tumbes and Ica presents the highest rates ranging from 10.2 to 10.8, while regions of Amazonas, Lambayeque and Tacna show the lowest rates ranging from 5.8 to 6.6.
-
-Figure \@ref(fig:map2) (left) shows crude mortality rates per 1,000 people are higher coastal regions of Lima, Callao, Moquegua and Ica. They are lower in Ayacucho, Cajamarca, Huancavelica and Pasco (Andean), as well as Amazonas (Amazon). Figure \@ref(fig:map2) (right) shows age-standardised rates per 1,000 people by direct standardization methods [@Curtin1995], using INEI estimates as the standard population. Madre De Dios (Amazon) has the highest rate, 10.8 (CI 95% 10.1 – 11.5), followed by coastal regions of Tumbes and Lima. We find that Amazonas shows -1.5 deaths per 1000 in comparison to INEI's projections for 2020 while Andean regions of Ayacucho, Puno and Cusco also present negative comparisons (-.4 to -.2). This suggests INEI's overestimations of mortality rates. ***This affects our estimation of completeness.***
+Figure \@ref(fig:map2) shows age-standardised rates per 1,000 people by direct standardization methods [@Curtin1995], using INEI estimates as the standard population.  We find that `r adj.rates.mores` present the highest rates ranging from `r min` to `r max`, while regions of `r adj.rates.less` show the lowest rates ranging from `r min2` to `r max2`.
+We find that `r dif`` shows `r dif.n` deaths per 1000 in comparison to INEI's projections for 2020, which suggests INEI's overestimations of mortality rates. ***This affects our estimation of completeness.***
 
 ``` {r map2, fig.cap="Mortality rates"}
 
-p3<-ggplot() + geom_sf(data = DEPS,
-                       aes(fill=crude.rate),size=.01,colour="white")+ 
-  theme(panel.background = element_rect(fill = 'white')) +
-  scale_fill_viridis_c(name = "Mortality rate",
-                       direction=1,option = "plasma")+
-  geom_sf_text(data=DEPS,aes(label = NOMBDEP),size=2)+
-  theme_map()+
-  ggtitle("Crude mortality rate")
-
-p4<-ggplot() + geom_sf(data = DEPS,
+ggplot() + geom_sf(data = DEPS,
                        aes(fill=adj.rate),size=.01,colour="white")+ 
   theme(panel.background = element_rect(fill = 'white')) +
   scale_fill_viridis_c( direction=1,option = "plasma")+
-  geom_sf_text(data=DEPS,aes(label = NOMBDEP),size=2)+
+  geom_sf_text(data=DEPS,aes(label = Departamento),size=2)+
   theme_map()+
   ggtitle("Age-standardised mortality rate")
-
-ggarrange(p3, p4, nrow=1, common.legend = TRUE, legend="right")
 
 
 ```
@@ -473,7 +446,7 @@ performance_mse(fit1)
 ```
 
 
-### Negative biniomial models
+### Quasi Poisson models
 
 ```{r, fite,results='asis'}
 
@@ -516,7 +489,7 @@ smrd.q %>% print (n=26)
 
 ```{r}
 
-propreg<-tateti6 %>% 
+propreg<-tateti6.t %>% 
   group_by(Departamento) %>%
   mutate(suma = sum(excess.total.mean),
          prop=suma/102109*100) %>% distinct(suma,prop) 

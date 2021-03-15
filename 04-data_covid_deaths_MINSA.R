@@ -2,11 +2,11 @@
 #####
 
 
-#url <- "https://www.datosabiertos.gob.pe/node/6460/download"
+url <- "https://www.datosabiertos.gob.pe/node/6460/download"
 
-#destfile <- "data/fallecidos_covid2020.csv"
+destfile <- "data/fallecidos_covid2020.csv"
 
-#download.file(url, destfile)
+download.file(url, destfile)
 
 fallecidos_covid <- read.csv("data/fallecidos_covid2020.csv", sep=";")
 

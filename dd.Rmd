@@ -1,0 +1,8 @@
+
+\begin{equation}
+  \begin{aligned}
+  log(\text{Deaths}_{i})=\beta_0+\beta_1\text{COVID-19}+\beta_2\text{Week}+\beta_3\text{Year}+
+  \text{log}(\text{Pop})+\sum_{k=2}^{40}\beta_k\text{Ci}_{k}(\text{Week})+\epsion_{t-1}+\epsilon_{t}
+   \end{aligned}  
+\end{equation}
+
