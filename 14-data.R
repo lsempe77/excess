@@ -126,6 +126,18 @@ ex.reg.covid<-summary %>% bind_cols(covid.oficial)%>%
   ) %>%
   dplyr::select(excess.oficial.t)
 
+###
+
+ex.total.covid<-summary %>% bind_cols(covid.oficial)%>%
+  mutate(excess.oficial=100*(round(excess.T,0)-covid.oficial)/covid.oficial,
+         excess.oficial.l=100*(round(excess.l,0)-covid.oficial)/covid.oficial,
+         excess.oficial.u=100*(round(excess.u,0)-covid.oficial)/covid.oficial,
+         excess.oficial.t=paste(round(excess.oficial,0),"%",
+                                "( 95% CI",round(excess.oficial.l,0),"% -",
+                                round(excess.oficial.u,0),"%)"),
+  ) %>%
+  dplyr::select(excess.oficial.t)
+
 
 ###
 

@@ -124,7 +124,7 @@ All-cause excess mortality is a comprehensive approach for estimating the direct
 
 ## Methods {.unnumbered}
 
-We use negative binomial regression models to estimate excess registered mortality in Peru during the first wave of the COVID-19 pandemic during 2020. We use logistic mixed-effects models to estimate the completeness of the new online registration system (SINADEF) at this time. 
+We use quasi-Poisson models to estimate excess registered mortality in Peru during the first wave of the COVID-19 pandemic during 2020. We use logistic mixed-effects models to estimate the completeness of the new online registration system (SINADEF) at this time. 
 
 ## Findings {.unnumbered}
 
@@ -307,7 +307,7 @@ $$\begin{equation} \label{totalmort}
 
 # Results 
 
-The estimations of completeness registration through the logistic regression model fits well the data according to $\text{R}^2$ and Root Mean Square of Errors. Model fit and goodness-of-fit is presented in Appendix 1. Figure \@ref(fig:map) shows important variations at regional completeness rates: Amazonas and Loreto, in the Amazon, Lambayeque, on the coast, and Cajamarca and Pasco, in the Andes show estimated completion of below 40%, while Ica in the coast and Madre De Dios in the Amazon -the less populated region-  achieve values that suggested full registration completeness (see Appendix 1). 
+The estimations of completeness registration through the logistic regression model fits well the data according to $\text{R}^2$ and Root Mean Square of Errors. Model fit and goodness-of-fit is presented in Appendix 1. Figure \@ref(fig:map) shows important variations at regional completeness rates: Amazonas and Loreto, in the Amazon, Lambayeque, on the coast, and Cajamarca and Pasco, in the Andes show estimated completion of below 40%, while Ica in the coast and Madre De Dios in the Amazon -the less populated region- achieve values that suggested full registration completeness (see Appendix 1). 
 
 ```{r map,fig.cap="Completeness registration", warning=FALSE,message=FALSE}
 
@@ -324,7 +324,7 @@ ggplot() + geom_sf(data = DEPS,aes(fill=sub.mean),size=.01,colour="white")+
 
 ```
 
-Table \@ref(tab:summary) summarises estimations for our computation of excess mortality. Turning to the first term of our excess mortality calculation, excess registered deaths, the negative binomial models generally fitted well the number of daily deaths across models. Excess registered deaths is estimated to be `r ex.reg`, while `r covid.oficial` are reported officially as COVID-19 deaths. This represents an increase of `r ex.reg.covid`. 
+Table \@ref(tab:summary) summarises estimations for our computation of excess mortality. Turning to the first term of our excess mortality calculation, excess registered deaths, the quasi-Poisson models generally fitted well the number of weekly deaths across models. Excess registered deaths is estimated to be `r ex.reg`, while `r covid.oficial` are reported officially as COVID-19 deaths. This represents an increase of `r ex.reg.covid` compared to MoH data. 
 
 ```{r summary}
 
@@ -337,8 +337,7 @@ pander(t(a), caption = "(\\#tab:summary) Summary of estimations, Peru, 2020.",
 
 ```
 
-Table \@ref(tab:exineidepq) shows estimates by region. Lima, which includes the capital, accounts for  `r lima.total` total excess deaths, and `r menos5` show the lowest number of deaths. Table \@ref(tab:exineiageq) shows excess mortality estimates by age group. Deaths among people aged 60 years and over accounts for `r pr1`% of total excess mortality. There was negative excess registered mortality for age groups under 9 and 10 to 19.
-
+Table \@ref(tab:exineidepq) shows estimates by region. Lima, which includes the capital, accounts for  `r lima.total` total excess deaths, and `r menos5` show the lowest number of deaths. Table \@ref(tab:exineiageq) shows excess mortality estimates by age group. Deaths among people aged 60 years and over accounts for `r pr1`% of total excess mortality. There was negative excess registered mortality for the two youngest age groups: under 9 and 10 to 19.
 
 ```{r exineidepq,results='asis'}
 
@@ -389,8 +388,7 @@ Our second term, excess unregistered deaths, is estimated to be `r ex.unreg`. Th
 
 Combining all these terms, our estimate of total excess deaths during 2020 is `r e.total` and our estimate of total deaths for 2020 is `r total`. This is `r excess.pct.t` more than projected deaths by INEI for 2020. 
 
-Figure \@ref(fig:map2) shows age-standardised rates per 1,000 people by direct standardization methods [@Curtin1995], using INEI estimates as the standard population.  We find that `r adj.rates.mores` present the highest rates ranging from `r min` to `r max`, while regions of `r adj.rates.less` show the lowest rates ranging from `r min2` to `r max2`.
-We find that `r dif`` shows `r dif.n` deaths per 1000 in comparison to INEI's projections for 2020, which suggests INEI's overestimations of mortality rates. 
+Figure \@ref(fig:map2) shows age-standardised rates per 1,000 people by direct standardization methods [@Curtin1995], using INEI estimates as the standard population.  We find that `r adj.rates.mores` present the highest rates ranging from `r min` to `r max`, while regions of `r adj.rates.less` show the lowest rates ranging from `r min2` to `r max2`. We find that `r dif` shows `r dif.n` deaths per 1000 in comparison to INEI's projections for 2020, which suggests INEI's overestimations of mortality rates for Amazonas. 
 
 <!-- ***This affects our estimation of completeness.*** -->
 
@@ -414,9 +412,9 @@ The COVID-19 pandemic has underscored the need for methodological advances in po
 
 Other published studies of excess COVID-19 mortality fall into two categories. Some studies provide estimates for countries where mortality data are relatively complete and reliable [@Banerjee2020; @Kontis2020; @Vestergaard2020; @Rivera2020]. As such, they do not apply specific methods to address data gaps. Studies of excess COVID-19 mortality for countries with less complete data do not take unregistered deaths [@Tadbiri2020;@Freitas2020;@Cevallos2020]. 
 
-We estimate that overall excess mortality in Peru was 278.2% higher than the level officially attributed to COVID-19. Registered excess mortality was 170.7% higher. This is a larger differential than reported by studies for high-income countries. For example, separate studies of the USA show differentials of between 28 and 33% [@Weinberger2020; @Woolf2020]. Our estimates are higher than those previously published for Peru, which are only based on registered deaths, apply simpler methods [@Quevedo2020;@Brown2020]. Our estimates of regional variations for excess mortality are in line with @Quevedo2020, who speculate they may be attributable to the effect of altitude of COVID-19 case fatality.  
+We estimate that overall excess mortality in Peru was `r ex.total.covid` higher than the level officially attributed to COVID-19. Registered excess mortality was `r ex.reg.covid` higher. This is a larger differential than reported by studies for high-income countries. For example, separate studies of the USA show differentials of between 28 and 33% [@Weinberger2020; @Woolf2020]. Our estimates are higher than those previously published for Peru, which are only based on registered deaths, apply simpler methods [@Quevedo2020;@Brown2020]. Our estimates of regional variations for excess mortality are in line with @Quevedo2020, who speculate they may be attributable to the effect of altitude of COVID-19 case fatality.  
 
-Despite making up a relatively low share of Peru’s population (12.5% in 2020), people aged 60 or more accounted for 76.4% of excess mortality. No other published study for Peru provides data disaggregated by age groups. A study of registered excess mortality in six Brazilian cities reports that people aged 60 and over accounted for 71.1% of the total [@Freitas2020]. An analysis of European countries reports that 91% of excess COVID-19 deaths occurred among people aged 65 or more [@Vestergaard2020]. This reflects a higher proportion of population aged 60 or more in Europe (25.5% in 2020) than in Peru.
+Despite making up a relatively low share of Peru’s population (12.5% in 2020), people aged 60 or more accounted for `r pr1`% of excess mortality. No other published study for Peru provides data disaggregated by age groups. A study of registered excess mortality in six Brazilian cities reports that people aged 60 and over accounted for 71.1% of the total [@Freitas2020]. An analysis of European countries reports that 91% of excess COVID-19 deaths occurred among people aged 65 or more [@Vestergaard2020]. This reflects a higher proportion of population aged 60 or more in Europe (25.5% in 2020) than in Peru.
 
 # Limitations
 
@@ -432,8 +430,6 @@ Our study indicates that official data under-represent the overall mortality imp
 
 <div id="refs"></div>
   
-
-
 # Appendices
 
 ## Appendix 1: Model fit registration completeness
@@ -455,7 +451,7 @@ performance_mse(fit1)
 
 #knitr::kable(fit.a,booktabs = T,format="latex",            format.args = list(big.mark = ","),             longtable=T,           caption = 'ARIMA models SINADEF')%>%  kableExtra::kable_styling(latex_options = c("hold_position", "repeat_header"))
 
-pander(nbfit.r, caption = "(\\#tab:arima) Model fit Negative Binomial - 2")
+pander(fit, caption = "(\\#tab:arima) Model fit Quasi-Poisson")
 
 ```
 
