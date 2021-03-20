@@ -91,13 +91,13 @@ a<-summary %>%
          comp.u=round(100*(excess.reg.u/excess.T),1),
          `Completeness of CRVS deaths registration` = paste(comp,"%","( 95% CI",comp.l,"% -",comp.u,"% )"),
         `Excess TOTAL mortality` = paste(round(excess.T,0),"( 95% CI",round(excess.l,0),"-",round(excess.u,0),")"),
-        `Counterfactual deaths in 2020`=paste(round(count,0),"( 95% CI",round(count.l,0),"-",round(count.u,0),")"),
-        `Total estimation deaths in 2020`=paste(round(total,0),"( 95% CI",round(total.l,0),"-",round(total.u,0),")")) %>%
+        `Counterfactual estimated deaths in 2020`=paste(round(count,0),"( 95% CI",round(count.l,0),"-",round(count.u,0),")"),
+        `Total estimated deaths in 2020`=paste(round(total,0),"( 95% CI",round(total.l,0),"-",round(total.u,0),")")) %>%
   dplyr::select(`Total Excess REGISTERED mortality based on Poisson models by region and age group`,
                 `Completeness of CRVS deaths registration`,
                 `Excess TOTAL mortality`,
-                `Counterfactual deaths in 2020`,
-                `Total estimation deaths in 2020`)
+                `Counterfactual estimated deaths in 2020`,
+                `Total estimated deaths in 2020`)
 
 
 # pander(t(a), caption = "(\\#tab:summary) Table 1: Summary of estimations, Peru, 2020.",
@@ -109,7 +109,7 @@ a<-summary %>%
 
 ex.reg<-summary %>%
   mutate(`Total Excess REGISTERED mortality based on Poisson models by region and age group` =
-           paste(round(excess.reg,0),"deaths","( 95% CI",round(excess.reg.l,0),"-",round(excess.reg.u,0),")"),
+           paste(round(excess.reg,0),"( 95% CI",round(excess.reg.l,0),"-",round(excess.reg.u,0),")"),
          ) %>%
   dplyr::select(`Total Excess REGISTERED mortality based on Poisson models by region and age group`)
 
@@ -259,7 +259,6 @@ lamba.more<-unreg.more[3,2]
 e.total<-summary %>%
   mutate(total =
            paste(round(excess.T,0),
-                 "deaths",
                  "( 95% CI",round(excess.l,0),
                  "-",
                  round(excess.u,0),")")) %>%
@@ -272,8 +271,7 @@ e.total
 total<-summary %>%
   mutate(total =
            paste(round(total,0),
-                 "deaths",
-                 "( 95% CI",round(total.l,0),
+                     "( 95% CI",round(total.l,0),
                  "-",
                  round(total.u,0),")")) %>%
   dplyr::select(total)
