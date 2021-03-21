@@ -99,7 +99,12 @@ a<-summary %>%
                 `Counterfactual estimated deaths in 2020`,
                 `Total estimated deaths in 2020`)
 
-colnames(a) <- c('Terms', 'Estimates (95% CI)')
+a<-as.data.frame(t(a))
+
+a <- tibble::rownames_to_column(a, "VALUE")
+
+colnames(a)[1] <- 'Terms'
+colnames(a)[2] <- 'Estimates (95% CI)'
 
 
 # pander(t(a), caption = "(\\#tab:summary) Table 1: Summary of estimations, Peru, 2020.",

@@ -271,7 +271,7 @@ Then, we compute the completeness of deaths registration, $\widehat{\text{Comple
    \begin{aligned}
   \widehat{\mu}_{\text{Deaths}_\text{Not reg}}= \big(1-\widehat{\text{Completeness}}\big)*
   \sum{\widehat{{\text{Excess}}_\text{Reg}}}
-   \end{aligne*d}      
+   \end{aligned}      
 \end{equation}
 
 The third term, unregistered COVID-19 deaths, is computed to correct for situations where the proportion of cumulative cases of COVID-19 exceeds registered deaths for that period. It follows a deterministic approach conditional on excess registered deaths being lower than officially registered COVID-19 deaths for each region and specific age-group as follows:
@@ -339,7 +339,7 @@ Table \@ref(tab:summary) summarises our estimates of excess mortality. The quasi
 ```{r summary}
 
 
-pander(t(a), caption = "(\\#tab:summary) Summary of estimations, Peru, 2020.", 
+pander(a, caption = "(\\#tab:summary) Summary of estimations, Peru, 2020.", 
        style = 'rmarkdown', 
        split.table = Inf,
        round=1)
@@ -402,23 +402,25 @@ Figure \@ref(fig:map2) shows all cause age-standardised death rates.  We find th
 
 <!-- ***This affects our estimation of completeness.*** -->
 
-``` {r map2, fig.cap="Age-standardised death rates"}
+``` {r map2, fig.cap="Age-standardised mortality rates"}
 
 mr1<-ggplot() + geom_sf(data = DEPS,
                        aes(fill=adj.rate),size=.01,colour="white") +
   scale_fill_viridis_c( direction=1,option = "plasma",
-                        name = "Mortality rate per 1,000")+
+                        name = "Age-standardised mortality rate per 1,000")+
   geom_sf_text(data=DEPS,aes(label = Departamento),size=2)+
-  theme_map() + ggtitle("Estimation of Age-standardised death rates in 2020")+ 
-  theme(panel.background = element_rect(fill = 'white'),legend.position="bottom")
+  theme_map() +
+  theme(panel.background = element_rect(fill = 'white'),legend.position="bottom",
+        legend.title=element_text(size=7))
 
 mr2<-ggplot() + geom_sf(data = DEPS,
                        aes(fill=Difference),size=.01,colour="white") +
   scale_fill_viridis_c( direction=1,option = "plasma",
-                        name = "Difference per 1,000 deaths")+
+                        name = "Difference between INEI's projections and 2020 estimates")+
   geom_sf_text(data=DEPS,aes(label = Departamento),size=2)+
-  theme_map()+ ggtitle("Difference between INEI projections and current estimation")+ 
-  theme(panel.background = element_rect(fill = 'white'),legend.position="bottom")
+  theme_map()+
+  theme(panel.background = element_rect(fill = 'white'),legend.position="bottom",
+        legend.title=element_text(size=7))
 
 ggarrange(mr1,mr2,ncol = 2)
 
@@ -453,7 +455,7 @@ Our study indicates that official data under-represent the overall mortality imp
 
 ## Appendix 1: Model fit registration completeness
 
-```{r, log, results='asis}
+```{r, log, results='asis'}
 
 r2<-r.squaredGLMM(fit1)
 
