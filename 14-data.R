@@ -84,20 +84,22 @@ summary<-tateti.std.q %>%
 ###
 
 a<-summary %>%
-  mutate(`Total Excess REGISTERED mortality based on Poisson models by region and age group` =
-           paste(round(excess.reg,0),"( 95% CI",round(excess.reg.l,0),"-",round(excess.reg.u,0),")"),
+  mutate(`Excess registered deaths` =
+           paste(round(excess.reg,0),"(",round(excess.reg.l,0),"-",round(excess.reg.u,0),")"),
          comp=round(100*(excess.reg/excess.T),1),
          comp.l=round(100*(excess.reg.l/excess.T),1),
          comp.u=round(100*(excess.reg.u/excess.T),1),
-         `Completeness of CRVS deaths registration` = paste(comp,"%","( 95% CI",comp.l,"% -",comp.u,"% )"),
-        `Excess TOTAL mortality` = paste(round(excess.T,0),"( 95% CI",round(excess.l,0),"-",round(excess.u,0),")"),
-        `Counterfactual estimated deaths in 2020`=paste(round(count,0),"( 95% CI",round(count.l,0),"-",round(count.u,0),")"),
-        `Total estimated deaths in 2020`=paste(round(total,0),"( 95% CI",round(total.l,0),"-",round(total.u,0),")")) %>%
-  dplyr::select(`Total Excess REGISTERED mortality based on Poisson models by region and age group`,
+         `Completeness of CRVS deaths registration` = paste(comp,"%","(",comp.l,"% -",comp.u,"%)"),
+        `Excess TOTAL mortality` = paste(round(excess.T,0),"(",round(excess.l,0),"-",round(excess.u,0),")"),
+        `Counterfactual estimated deaths in 2020`=paste(round(count,0),"(",round(count.l,0),"-",round(count.u,0),")"),
+        `Total estimated deaths in 2020`=paste(round(total,0),"(",round(total.l,0),"-",round(total.u,0),")")) %>%
+  dplyr::select(`Excess registered deaths`,
                 `Completeness of CRVS deaths registration`,
                 `Excess TOTAL mortality`,
                 `Counterfactual estimated deaths in 2020`,
                 `Total estimated deaths in 2020`)
+
+colnames(a) <- c('Terms', 'Estimates (95% CI)')
 
 
 # pander(t(a), caption = "(\\#tab:summary) Table 1: Summary of estimations, Peru, 2020.",

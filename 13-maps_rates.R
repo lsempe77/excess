@@ -143,6 +143,8 @@ adj.rates.mores<-str_to_title(adj.rates.mores)
 
 adj.rates.mores<-knitr::combine_words(adj.rates.mores)
 
+
+
 min<-mortality.rates %>%
   arrange(adj.rate) %>%
   top_n(3) %>% summarise(min=min(adj.rate))
@@ -152,6 +154,16 @@ max<-mortality.rates %>%
   top_n(3) %>% summarise(max=max(adj.rate))
 
 
+adj.rates.ci<-as.data.frame(mortality.rates %>%
+                  arrange(adj.rate) %>%
+                  top_n(3))
+
+
+adj.rates.ci<-adj.rates.ci %>%
+ summarise(min=min(lci),max=max(uci))
+
+adj.rates.ci.min<-adj.rates.ci$min
+adj.rates.ci.max<-adj.rates.ci$max
 
 adj.rates.less<-as.data.frame(mortality.rates %>%
                                  arrange(adj.rate) %>%
@@ -170,6 +182,18 @@ min2<-mortality.rates %>%
 max2<-mortality.rates %>%
   arrange(adj.rate) %>%
   top_n(-3) %>% summarise(max=max(adj.rate))
+
+
+adj.rates.ci.l<-as.data.frame(mortality.rates %>%
+                              arrange(adj.rate) %>%
+                              top_n(-3))
+
+
+adj.rates.ci.l<-adj.rates.ci.l %>%
+  summarise(min=min(lci),max=max(uci))
+
+adj.rates.ci.l.min<-adj.rates.ci.l$min
+adj.rates.ci.l.max<-adj.rates.ci.l$max
 
 ###
 
