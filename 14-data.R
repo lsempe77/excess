@@ -8,6 +8,7 @@ pmu<-((smrd.q[226,6]-smrd.q[226,9])/smrd.q[226,6])*100
 
 pm;pml;pmu
 
+
 et<-smrd.q[226,4]
 etl<-smrd.q[226,5]
 etu<-smrd.q[226,6]
@@ -21,6 +22,7 @@ et;etl;etu
 er;erl;eru
 
 ####
+
 
 age<-tateti6.t%>%group_by(range) %>%
   summarise(`Total excess (TE)`=sum(excess.total.mean,na.rm = T),
@@ -170,7 +172,7 @@ reg<-  tateti.std.q %>%
             total.u=sum(total.u,na.rm = T))
 
 menos5<-as.data.frame(reg %>% group_by(Departamento) %>%
-                        summarise (ex=sum(excess.T,na.rm = T)) %>% top_n(-3))
+                        summarise (ex=sum(excess.T,na.rm = T)) %>% top_n(-2))
 
 
 menos5<-paste0(menos5$Departamento)
@@ -178,6 +180,15 @@ menos5<-paste0(menos5$Departamento)
 menos5<-str_to_title(menos5)
 
 menos5<-knitr::combine_words(menos5)
+
+menos5.num<- reg %>%
+  group_by(Departamento) %>%
+                            summarise (ex=sum(excess.T,na.rm = T)) %>%
+  top_n(-2) %>%
+                            mutate(r=round(ex,-2)) %>%
+                                     distinct(r)
+
+menos5.num
 
 ####
 

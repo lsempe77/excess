@@ -44,7 +44,7 @@ aaa<-SINADEF.proj.t %>%
   group_by(Departamento,range) %>%
   nest() %>%
   mutate(model = data %>%
-           map(~glm(deaths ~ ns(t,df=3)+AÑO+
+           map(~glm(deaths ~ t+AÑO+
                                 covid+
                       offset(log(population)),
                     family = quasipoisson,
@@ -55,9 +55,46 @@ aaa<-SINADEF.proj.t %>%
   unnest(c(Pred, res,data))
 
 
+
+
+###
+aaa %>% filter(range=="a80") %>%
+  nest() %>%
+    mutate(model1 = data %>% map(~glm(deaths ~  ns(t,3)+
+                                        AÑO+covid+
+   dplyr::lag(res, 1)+
+   offset(log(population)),
+   family = quasipoisson,
+   data = .)),
+   model2 = data %>% map(~glm(deaths ~  ns(t,3)+
+                                AÑO+covid+
+                                dplyr::lag(log(deaths), 1)+
+                                offset(log(population)),
+                              family = quasipoisson,
+                              data = .)),
+   model3 = data %>% map(~glm(deaths ~  t+
+                                AÑO+covid+
+                                dplyr::lag(res, 1)+
+                                offset(log(population)),
+                              family = quasipoisson,
+                              data = .))) %>%
+   mutate(Pred1 = map2(model1, data, predict),
+          Pred2 = map2(model2, data, predict)) %>%
+   unnest(c(Pred1,Pred2, data)) %>%
+     ggplot() +
+        facet_wrap(~Departamento,scales = "free")+
+          geom_point(aes(t,deaths),alpha=.1) +
+            geom_line(aes(t,exp(Pred1),colour="ns.res"))+
+            geom_line(aes(t,exp(Pred2),colour="t.res"))+
+                theme_clean()
+
+
+
+
+
 fit<-aaa %>%
   group_by(Departamento,range) %>%
-  do(its.covid = glance(glm(deaths ~ ns(t,3)+AÑO+
+  do(its.covid = glance(glm(deaths ~ t+AÑO+
                               covid+
                               dplyr::lag(res, 1)+
                               offset(log(population)),
@@ -79,8 +116,9 @@ ggplot(fit)+geom_histogram(aes(p))
 ###
 
 its.covid.list4d.t <- aaa %>% group_by(Departamento,range) %>%
-  do(its.covid = tidy(coeftest(glm(deaths ~  ns(t,3) + AÑO+
-                                     covid+
+  do(its.covid = tidy(coeftest(glm(deaths ~  t +
+                                     AÑO+
+                                     covid +
                                      dplyr::lag(res, 1)+
                                      offset(log(population)),
                                    family = quasipoisson,
@@ -177,6 +215,19 @@ t5.t<-tateti6.t %>% ungroup() %>%
             excess.u=sum(excess.total.up,na.rm = T))
 
 
+
+t5.t
+
+
+tateti6.t%>%group_by(range) %>%
+  summarise(`Excess registered (ER)`=sum(excess_deaths.sum),
+            `ER - Lower 95% CI`=sum(excess.low),
+            `ER - Upper 95% CI`=sum(excess.up)) %>%
+  adorn_totals()
+
+
+
+
 #
 # ###
 # aaa %>% filter(Departamento=="CALLAO") %>%
@@ -250,3 +301,20 @@ t5.t<-tateti6.t %>% ungroup() %>%
 #   geom_line(aes(t,exp(Pred6),colour="bs.res.fourier"))
 #   #geom_line(aes(t,exp(Pred7),colour="poly.res.fourier"))+
 #   #geom_line(aes(t,exp(Pred8),colour="t.res.fourier"))
+
+
+##
+
+SINADEF %>%
+  filter (range=="a80" & AÑO !=2020) %>%
+  mutate(mes=month(FECHA))%>%
+  group_by(AÑO,mes) %>%
+  summarise (d=n()) %>%
+  ggplot () + geom_line(aes(mes, d,colour=AÑO)) +
+  scale_x_continuous(breaks = seq(0,12,1))
+
+
+SINADEF %>%
+  filter (range=="a80") %>%
+    group_by(AÑO) %>%
+  summarise (d=n())

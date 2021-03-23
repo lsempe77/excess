@@ -70,5 +70,6 @@ covidnaive<-SINADEF %>%
   mutate(complete.covid = case_when(
     Covid_deaths > deaths ~
       (Covid_deaths-deaths),
-    T ~ 0L)) %>%
-  summarise(complete.covid=sum(complete.covid))
+    T ~ 0L))
+
+covidnaive

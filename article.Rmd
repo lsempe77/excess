@@ -5,7 +5,7 @@ author:
 - Ramón Martínez^[Pan American Health Organisation]
 - Shah Ebrahim^[London School of Hygiene and Tropical Medicine]
 - Martin McKee^[London School of Hygiene and Tropical Medicine]
-- Enrique Acosta ^[Max Plank Institute for Demographich Research]
+- Enrique Acosta ^[Max Planck Institute for Demographich Research]
 - Lucas Sempé^[University of East Anglia - email:l.sempe@uea.ac.uk]
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
@@ -15,7 +15,6 @@ output:
     fig_caption: yes
     keep_tex: yes
     number_sections: true
-  redoc::redoc: default
   bookdown::word_document2: default
   bookdown::html_document2: default
 bibliography: Excess.deaths.bib
@@ -128,7 +127,7 @@ We use quasi-Poisson models to estimate excess registered mortality in Peru duri
 
 ## Findings {.unnumbered}
 
-We estimate that registered mortality nationally underestimates mortality by `r pm`% (95% CI `r pml`% - `r pmu`%). We estimate total all-cause excess mortality during the period of analysis at `r et` (95% CI  `r etl` - `r etu`) of which `r er` (95% CI  `r erl` - `r eru`) were captured by the vital registration system.  Deaths at age 60 and over accounted for `r age60t`% (95% CI `r age60l`% - `r age60u`%) of total excess deaths, while there were fewer deaths than expected in younger age groups. Lima region, on the Pacific coast and including the national capital, accounts for `r limat` (95% CI  `r limal` - `r limau`) excess deaths, while the regions of Apurimac and Pasco, in the Andes, account for less than 400 excess deaths.
+We estimate that registered mortality nationally underestimates mortality by `r pm`% (95% CI `r pml`% - `r pmu`%). We estimate total all-cause excess mortality during the period of analysis at `r et` (95% CI  `r etl` - `r etu`) of which `r er` (95% CI  `r erl` - `r eru`) were captured by the vital registration system.  Deaths at age 60 and over accounted for `r age60t`% (95% CI `r age60l`% - `r age60u`%) of total excess deaths, while there were fewer deaths than expected in younger age groups. Lima region, on the Pacific coast and including the national capital, accounts for `r limat` (95% CI  `r limal` - `r limau`) excess deaths, while the regions of `r menos5` account for less than `r menos5.num` excess deaths.
 
 ## Interpretation {.unnumbered}
 
@@ -223,21 +222,19 @@ To estimate the first term, excess registered deaths, we fit quasi-Poisson regre
 \begin{equation}
   (\#eq:registered)
   \begin{aligned}
-  log(\text{Deaths}_{i})=\beta_0+\beta_1\text{COVID-19}+\beta_2\text{Year}+
-  \beta_3\epsilon_{t-1}+
-  \sum\beta_k\phi_{k}(\text{Week})+
-  \text{log}(\text{Pop})+\epsilon_{t}
+  log(\text{Deaths}_{i})=\beta_0+\beta_1\text{COVID-19}+\beta_2\text{Week}+\beta_3\text{Year}+
+  \beta_4\epsilon_{t-1} + \text{log}(\text{Pop})+\epsilon_{t}
    \end{aligned}  
 \end{equation}
 
-where we fit a natural cubic B-spline function $\phi_{k}(\text{Week})$ on weeks to address long-term trends and seasonality [@Currie2004] and $\text{Year}$ to deal with registration growth. Additionally, we use lagged residuals $\epsilon_{t-1}$ and the log of population in 2020 as an offset. Finally, we compute a dichotomous variable starting in the week corresponding to March 16 2020 as the first registered case of COVID-19 in the country.
+where we fit weekly counts of deaths $\text{Week}$ and a variable $\text{Year}$ to address long-term trends. Additionally, we use lagged residuals $\epsilon_{t-1}$ and the log of population in 2020 as an offset. Finally, we compute a dichotomous variable starting in the week corresponding to March 16 2020 as the first registered case of COVID-19 in the country.
 
 Secondly, we compute the population attributable fraction[@Steenland2006] based on the relative risk $\text{RR}$ from parameter $\beta_1$ in equation \@ref(eq:registered), as follows:
 
 \begin{equation}
 (\#eq:rr)
 \begin{aligned}
-\widehat{{\text{Excess}}_\text{Reg}} = (\text{RR}–1)/\text{RR}*\text{n}
+\widehat{{\text{Excess}}_\text{Reg}} = (\text{RR}-1)/\text{RR}*\text{n}
 \end{aligned}
 \end{equation}
                         
@@ -358,7 +355,7 @@ exineidep.q<-tateti6.t%>%group_by(Departamento) %>%
      `Excess registered (ER)`=sum(excess_deaths.sum),
      `ER - Lower 95% CI`=sum(excess.low),
              `ER - Upper 95% CI`=sum(excess.up),
-     `Excess Covid-19`=sum(complete.covid)) %>%
+     `Excess Covid-19`=round(sum(complete.covid)),0) %>%
     adorn_totals()
 #knitr::kable(exineidep.q[,1:7],booktabs = T, format="latex",            format.args = list(big.mark = ","),             caption = "Estimated of total excess of deaths by regions",             col.names = c("Region" , "Total excess" , "Lower.CI95%" , "Upper.CI95%" , "Excess reg" , "Covid reg" , "Unregistered")) %>%        kableExtra::kable_styling(latex_options = "hold_position",   font_size = 9 )
 colnames(exineidep.q)[1]<-"Region"
@@ -380,7 +377,7 @@ exineiageq<-tateti6.t%>%group_by(range) %>%
      `Excess registered (ER)`=sum(excess_deaths.sum),
      `ER - Lower 95% CI`=sum(excess.low),
              `ER - Upper 95% CI`=sum(excess.up),
-     `Excess Covid-19`=sum(complete.covid)) %>%
+     `Excess Covid-19`=round(sum(complete.covid),0)) %>%
     adorn_totals()
 
 	
@@ -398,7 +395,7 @@ Our second term, excess unregistered deaths, is estimated to be `r ex.unreg`. Th
 
 Combining all these terms, our estimate of total excess deaths during 2020 is `r e.total` and our estimate of total deaths for 2020 is `r total`. This is `r excess.pct.t` more than the number of deaths projected by INEI for 2020. 
 
-Figure \@ref(fig:map2) shows all cause age-standardised death rates.  We find that `r adj.rates.mores` (CI 95% ranging from `r adj.rates.ci.min` to `r adj.rates.ci.max`) present the highest rates, ranging from `r min` to `r max`, while regions of `r adj.rates.less` show the lowest rates ranging from `r min2` to `r max2` (CI 95% ranging from `r adj.rates.ci.l.min` to `r adj.rates.ci.l.max`) (left). We find that `r dif` shows `r dif.n` deaths per 1000 in comparison to INEI's projections for 2020, which suggests that INEI overestimates mortality rates in Amazonas (right.
+Figure \@ref(fig:map2) shows all cause age-standardised death rates.  We find that `r adj.rates.mores` (CI 95% ranging from `r adj.rates.ci.min` to `r adj.rates.ci.max`) present the highest rates, ranging from `r min` to `r max`, while regions of `r adj.rates.less` show the lowest rates ranging from `r min2` to `r max2` (CI 95% ranging from `r adj.rates.ci.l.min` to `r adj.rates.ci.l.max`) (left). We find that `r dif` shows `r dif.n` deaths per 1000 in comparison to INEI's projections for 2020, which suggests that INEI overestimates mortality rates in Amazonas (right).
 
 <!-- ***This affects our estimation of completeness.*** -->
 
@@ -446,6 +443,33 @@ Our analysis assumes that comparison between years is not invalidated by specifi
 There is an evident need for robust estimates of the direct and indirect mortality effects of the COVID-19 pandemic. To date, much of the data for LMICs in the public domain rely on officially-registered deaths. Inaccurate attribution of cause of death can, to some degree, be resolved by generating excess mortality estimates based on temporal comparisons of all-cause mortality.  Also, these approaches do not include deaths that are not officially registered. This paper develops and applies a method to obtain robust estimates of excess mortality for both registered and unregistered deaths.
 
 Our study indicates that official data under-represent the overall mortality impact of the COVID-19 pandemic in Peru. This gap is considerably greater than those reported for high-income countries. It is plausible that under-estimation of excess mortality in other countries with low quality mortality data will be comparable to Peru. In that case, LMICs would account for a much larger share of the global distribution of excess mortality associated with the COVID-19 pandemic than indicated by official data sources. 
+
+# Contributors
+
+LS conceived and initiated the study, did the statistical analysis and visualisations and drafted the manuscript. 
+
+PLS conceived and supervised the study, drafted the manuscript and led the editing process of the manuscript. 
+
+MM and SE supervised the study and engaged in the draft review & editing
+
+RM contributed in the data curation and methodology process and reviewed & edited the draft.
+
+EA contributed in data curation, methodology and statistical analysis.
+
+LS and EA had access to all the data. All authors approved the manuscript and are responsible for the decision to submit for publication.
+
+# Declaration of interests
+
+All other authors declare no competing interests.
+
+# Data sharing
+
+Data presented in this manuscript are made publicly available at https://github.com/lsempe77/excess
+
+# Acknowledgments
+
+Any?
+
 
 # References 
 
