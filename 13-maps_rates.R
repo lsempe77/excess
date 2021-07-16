@@ -9,7 +9,7 @@ DEPS <- DEPS %>% rename("Departamento"="NOMBDEP")%>%
   left_join(tateti6.t)
 
 SINADEF.ts.range<-SINADEF %>%
-  group_by(AÑO,Departamento,range,week)%>%
+  group_by(AÑO,Departamento,range)%>%
   summarise(deaths.sinadef=n())
 
 pob20.r <- pob.regiones.group.age.sex.2020 %>% rename(range=name)%>%
@@ -17,10 +17,18 @@ pob20.r <- pob.regiones.group.age.sex.2020 %>% rename(range=name)%>%
   summarise(population2=sum(population)) %>%
   mutate(freq=population2/sum(population2))
 
-sinadef.base2020.d.r <- SINADEF.ts.range %>%
+sinadef.base2020.d.r <- SINADEF.ts.range %>% #filter(Departamento!="LAMBAYEQUE")%>%
   filter(AÑO == 2020) %>%
   group_by(Departamento,range) %>%
   summarise(deaths.sinadef=sum(deaths.sinadef,na.rm = T))
+
+sinadef.base2020.d.r.lamba <- SINADEF.ts.range %>% filter(Departamento=="LAMBAYEQUE")%>%
+  filter(AÑO == 2017) %>%
+  group_by(Departamento,range) %>%
+  summarise(deaths.sinadef=sum(deaths.sinadef,na.rm = T))
+
+
+
 
 pop.dep.range<-combined.pop.mort%>%group_by(Departamento,range)%>%
   summarise(pop.INEI=sum(pop.INEI))
@@ -28,6 +36,15 @@ pop.dep.range<-combined.pop.mort%>%group_by(Departamento,range)%>%
 mortdep<-combined.pop.mort %>%
   group_by(Departamento,range) %>%
   summarise (mort.estim=sum(mort.estim.edades.f))
+
+#
+
+# Exceso total = { (sinadef historico + exceso registrado)* crec.registro +
+#                                exceso no registrado } *sub.registro
+
+# sinadef historico = sinadef - exceso registrado
+
+
 
 tateti.std.q<- tateti6.t %>%
   left_join(sinadef.base2020.d.r) %>% left_join(mortdep) %>%
@@ -41,11 +58,13 @@ tateti.std.q<- tateti6.t %>%
             counterfactual2020=(deaths.sinadef-excess.reg),
             counterfactual2020.u=(deaths.sinadef-excess.reg.l),
             counterfactual2020.l=(deaths.sinadef-excess.reg.u),
-            total=excess.total.mean+(counterfactual2020*(1+(1-sub.mean))),
-            total.l=excess.total.low+(counterfactual2020.l*(1+(1-sub.mean))),
-            total.u=excess.total.up+(counterfactual2020.u*(1+(1-sub.mean)))) %>%
+            total=excess.total.mean+counterfactual2020+(counterfactual2020*(1/sub.mean-1)),
+            total.l=excess.total.low+counterfactual2020.l+(counterfactual2020.l*(1/sub.mean-1)),
+            total.u=excess.total.up+counterfactual2020.u+(counterfactual2020.u*(1/sub.mean-1)),
+            complete.covid=sum(complete.covid,na.rm = T)) %>%
   left_join(pop.dep.range) %>%
   mutate(rate=total/pop.INEI)
+
 
 pop.dep<-combined.pop.mort%>%group_by(Departamento)%>%
   summarise(pop.INEI=sum(pop.INEI))
@@ -68,6 +87,8 @@ crude.rate<- tateti6.t %>%
   left_join(population_regions,by=c("Departamento"="DEPARTAMENTO")) %>%
   summarise(rate=total/`2020`*1000) %>% distinct()
 
+crude.rate %>% arrange(rate)
+
 smrd.q <- tateti.std.q %>%
   group_by(Departamento,range)%>%
   summarise(sinadef=sum(deaths.sinadef,na.rm = T),
@@ -84,7 +105,6 @@ smrd.q <- tateti.std.q %>%
             total.l=sum(total.l,na.rm = T),
             total.u=sum(total.u,na.rm = T)) %>% adorn_totals()
 
-# smrd.q %>% print (n=26)
 
 ###
 
@@ -96,6 +116,7 @@ pob.regiones.2005.2015.long<-pob.regiones.ed.2005.2015%>%
 colnames(pob.regiones.2005.2015.long)[2]<-"year"
 colnames(pob.regiones.2005.2015.long)[3]<-"population"
 
+#tateti.std.q %>% left_join(pob20.r)%>%select(Departamento,total,pop.INEI,rate,population2)
 
 agestd<-tateti.std.q %>% left_join(pob20.r)%>%
   summarise(
@@ -108,6 +129,7 @@ agestd<-tateti.std.q %>% left_join(pob20.r)%>%
 
 tasas_mortalidad_regiones_INEI <- read_excel("data/tasas_mortalidad_regiones_INEI.xlsx")
 
+tasas_mortalidad_regiones_INEI %>% print(n=26)
 
 mortality.rates <- agestd %>%
   left_join(crude.rate) %>%
@@ -121,6 +143,10 @@ mortality.rates <- agestd %>%
 
 mr5<-mortality.rates %>% arrange(Difference)
 
+DEPS %>% group_by(Departamento)%>%
+summarise(sub.mean=mean(sub.mean)) %>% select(Departamento,sub.mean) %>% as.data.frame()%>%
+  select(-geometry) %>% arrange(sub.mean)
+
 DEPS<-DEPS %>%left_join(mortality.rates)
 
 mortality.rates %>% arrange(crude.rate) %>% top_n(3)
@@ -130,7 +156,7 @@ mortality.rates %>% arrange(adj.rate) %>% top_n(3)
 mortality.rates %>% arrange(adj.rate) %>% top_n(-3)
 
 mortality.rates %>% arrange(Difference) %>% top_n(3)
-mortality.rates %>% arrange(Difference) %>% top_n(-3)
+mortality.rates %>% arrange(Difference) %>% top_n(-5)
 
 
 adj.rates.mores<-as.data.frame(mortality.rates %>%
@@ -197,7 +223,9 @@ adj.rates.ci.l.max<-adj.rates.ci.l$max
 
 ###
 
-dif<-as.data.frame(mortality.rates %>% arrange(Difference) %>% top_n(-1))
+mortality.rates %>% arrange(Difference) %>% top_n(-2)
+
+dif<-as.data.frame(mortality.rates %>% arrange(Difference) %>% top_n(-2))
 dif<-paste0(dif$Departamento)
 
 dif<-str_to_title(dif)
@@ -205,8 +233,8 @@ dif<-str_to_title(dif)
 dif<-knitr::combine_words(dif)
 dif
 
-dif.n<-mortality.rates %>% arrange(Difference) %>% top_n(-1)
-dif.n<-dif.n[8]
+dif.n<-mortality.rates %>% arrange(Difference) %>% top_n(-3)
+dif.n<-dif.n[1,8]
 
 ##
 
@@ -221,3 +249,4 @@ dif.m
 
 dif.m.n<-mortality.rates %>% arrange(Difference) %>% top_n(2)
 dif.m.n<-dif.m.n[8]
+

@@ -118,7 +118,7 @@ pob.regiones.group.age.sex.2020<-pob.regiones.group.age.sex.2020%>%
          a70.79 = rowSums(.[16:17]),
          a80 = rowSums(.[18])) %>%
   dplyr::select(Departamento,Sexo,a0.9:a80)%>%
-  group_by(Departamento, Sexo) %>%
+  group_by(Departamento, Sexo,.drop=F) %>%
   pivot_longer(cols = a0.9:a80)
 
 colnames(pob.regiones.group.age.sex.2020)[4]<-"population"
@@ -130,7 +130,7 @@ pob.regiones.group.age.sex.2020$Sexo<-factor(pob.regiones.group.age.sex.2020$Sex
                                              labels = c("Male", "Female"))
 
 compare.estim.age<-pob.regiones.group.age.sex.2020%>%
-  group_by(Departamento,name)%>%
+  group_by(Departamento,name,.drop=F)%>%
   summarise(pop.INEI=sum(population))
 
 colnames(compare.estim.age)[2]<-"range"

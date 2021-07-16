@@ -2,11 +2,11 @@
 #####
 
 
-url <- "https://www.datosabiertos.gob.pe/node/6460/download"
+#url <- "https://www.datosabiertos.gob.pe/node/6460/download"
 
-destfile <- "data/fallecidos_covid2020.csv"
+#destfile <- "data/fallecidos_covid2020.csv"
 
-download.file(url, destfile)
+#download.file(url, destfile)
 
 fallecidos_covid <- read.csv("data/fallecidos_covid2020.csv", sep=";")
 
@@ -33,29 +33,28 @@ fallecidos_covid$FECHA_FALLECIMIENTO<-sub("(.{7})(.*)", "\\1.\\2", fallecidos_co
 fallecidos_covid.l<-fallecidos_covid %>%
   mutate (FECHA_FALLECIMIENTO=as.Date(FECHA_FALLECIMIENTO,"%Y.%m.%d"),
           week = epiweek(FECHA_FALLECIMIENTO)) %>%
-  filter(FECHA_FALLECIMIENTO<"2021-01-01") %>%
-  group_by(DEPARTAMENTO,week)%>%summarise(Covid_deaths= n())
+  filter(FECHA_FALLECIMIENTO<"2020-12-01") %>% # check  2021-01-01
+  group_by(DEPARTAMENTO,week,.drop=F)%>%summarise(Covid_deaths= n())
 
 colnames(fallecidos_covid.l)[1]<-"Departamento"
 
 fallecidos_covid.r.l<- fallecidos_covid %>%
-  mutate (FECHA_FALLECIMIENTO = as.Date(FECHA_FALLECIMIENTO,
-                                        "%Y.%m.%d"),
+  mutate (FECHA_FALLECIMIENTO=as.Date(FECHA_FALLECIMIENTO,"%Y.%m.%d"),
           week = epiweek(FECHA_FALLECIMIENTO)) %>%
   filter(FECHA_FALLECIMIENTO<"2021-01-01") %>%
-  group_by(DEPARTAMENTO,range) %>%
+  group_by(DEPARTAMENTO,range,.drop=F) %>%
   summarise(Covid_deaths= n())
-
 
 
 #fallecidos_covid.r.l %>% filter (DEPARTAMENTO=="LAMBAYEQUE")
 
 
 fallecidos_covid.test<-fallecidos_covid %>%
-  mutate(FECHA = as.Date(FECHA_FALLECIMIENTO, "%Y.%m.%d")) %>%
-  mutate(week = epiweek(FECHA)) %>%
-  filter(FECHA_FALLECIMIENTO<"2021-01-01") #37273 deaths COVID 2020
+  mutate (FECHA_FALLECIMIENTO=as.Date(FECHA_FALLECIMIENTO,"%Y.%m.%d"),
+          week = epiweek(FECHA_FALLECIMIENTO)) %>%
+  filter(FECHA_FALLECIMIENTO<"2020-12-01") #37725 deaths COVID 2020 # # check  2021-01-01
 
+covidofic<-fallecidos_covid.test %>% tally()
 
 
 ##
@@ -63,7 +62,7 @@ fallecidos_covid.test<-fallecidos_covid %>%
 covidnaive<-SINADEF %>%
   mutate(FECHA = as.Date(FECHA, "%Y-%m-%d")) %>%
   filter(FECHA > "2020-03-16")%>%
-  group_by(Departamento,range) %>%
+  group_by(Departamento,range,.drop=F) %>%
   summarise(deaths=n())%>% dplyr::select(deaths,range,Departamento)  %>%
   left_join(fallecidos_covid.r.l,by=c("range","Departamento"="DEPARTAMENTO")) %>%
   ungroup() %>%

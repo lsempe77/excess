@@ -1,32 +1,56 @@
+target <- c("U071", "U072","B342","B972","coronavirus", "cov-2", "cov2", "covid", "sars")
+
+SINADEF.causes <- SINADEF %>%
+  mutate(week=ISOweek(FECHA),
+         Date = ISOweek2date(paste0(week, "-7"))) %>%
+  filter(week != "2016-W52" &  Date < "2021-01-01") %>% #2021-01-01
+  filter (    `CAUSA A (CIE-X)` %in% target |
+                `CAUSA B (CIE-X)` %in% target |
+                `CAUSA C (CIE-X)` %in% target |
+                `CAUSA D (CIE-X)` %in% target ) %>%
+  group_by(Departamento, range, Date) %>%
+  summarise(deaths.covid=n())
+
+SINADEF.causes<- SINADEF.causes %>%
+  as_tsibble(key = c(Departamento, range), index = Date) %>%
+  fill_gaps(.full = TRUE)
+
+SINADEF.causes<-SINADEF.causes %>% as_tibble() %>%
+  mutate (deaths.covid = case_when (is.na(deaths.covid) ~ 0,
+                                    T ~ as.numeric(deaths.covid)))
+
+
 SINADEF.proj.t <- SINADEF %>%
-  mutate(covid = case_when(FECHA > "2020-03-15" ~ 1,
+  mutate(week=ISOweek(FECHA),
+         Date = ISOweek2date(paste0(week, "-7"))) %>%
+  filter(week != "2016-W52" &  Date < "2021-01-01") %>%#
+  group_by(Departamento,range,week,Date) %>%
+  summarise(deaths=n())
+
+SINADEF.proj.t<- SINADEF.proj.t %>%
+  as_tsibble(key = c(Departamento, range), index = Date) %>%
+  fill_gaps(.full = TRUE)
+
+
+SINADEF.proj.t<-SINADEF.proj.t %>% as_tibble() %>%
+  mutate (deaths = case_when (is.na(deaths) ~ 0,
+                                               T ~ as.numeric(deaths))) %>%
+    group_by(Departamento,range) %>% mutate(week2=1:n())%>%
+   left_join(epitime.regions) %>%
+  mutate(covid = case_when(week2 >= start ~ 1,
                            T ~ 0)) %>%
-  mutate(week=case_when(FECHA == base::as.Date("2017-12-31") ~ 53,
-                        AÑO == 2017 & FECHA != "2017-12-31" ~ week,
-                        AÑO==2018 & FECHA ==  base::as.Date("2018-12-30")  ~ week+104,
-                        AÑO==2018 & FECHA ==  base::as.Date("2018-12-31")  ~ week+104,
-                        AÑO==2018 & (FECHA != "2018-12-30" | FECHA != "2018-12-31")  ~ week+52,
-                        FECHA == "2019-12-29" | FECHA == "2019-12-30" |FECHA == "2019-12-31" ~ 157,
-                        AÑO==2019 & (FECHA != "2019-12-29" | FECHA != "2019-12-30"
-                                     | FECHA != "2019-12-31") ~ week+104,
-                        FECHA == "2019-12-29" | FECHA == "2019-12-30" |FECHA == "2019-12-31" ~ 157,
-                        AÑO== 2020 ~ week+156))  %>%
-  dplyr::group_by(AÑO,Departamento,range,week,covid) %>%
-  summarise(deaths=n()) %>% #filter(week>53) %>%
-  mutate(t = week,
-         sn52 = sin((2*pi*t)/(52)),
-         cs52 = cos((2*pi*t)/(52)),
-         sn26 =sin((2*pi*t)/(26)),
-         cs26 =cos((2*pi*t)/(26)),
-         sn13 =sin((2*pi*t)/(13)),
-         cs13 =cos((2*pi*t)/(13))) %>% filter(!is.na(range))
+  filter(!is.na(range)) %>%
+  ungroup()
+
 
 SINADEF.causal4.t <- SINADEF.proj.t%>%
   group_by(Departamento,range) %>%
-  filter(week>167) %>%
-  summarise(tot=sum(deaths))
+  filter(week2 >= start) %>%
+  summarise(tot=sum(deaths,na.rm = T))
 
-SINADEF.proj.t$fourier <- harmonic(SINADEF.proj.t$t,nfreq=6,period=52.18) # annual cycle and harmonics
+SINADEF.proj.t$fourier <- harmonic(SINADEF.proj.t$week2,
+                                   nfreq=6,period=52.18) # annual cycle and harmonics
+
 
 pop.reg.ed.t<-pob.regiones.group.age.sex.2020 %>%rename(range=name)%>%
   group_by(Departamento,range)%>%
@@ -34,69 +58,35 @@ pop.reg.ed.t<-pob.regiones.group.age.sex.2020 %>%rename(range=name)%>%
 
 SINADEF.proj.t <- SINADEF.proj.t %>% left_join(pop.reg.ed.t)
 
+#
+
+
 # glimpse(SINADEF.proj.t)
 
-SINADEF.proj.t$AÑO<-as.factor(SINADEF.proj.t$AÑO)
-
-SINADEF.proj.t$AÑO<-droplevels(SINADEF.proj.t$AÑO)
-
-aaa<-SINADEF.proj.t %>%
-  group_by(Departamento,range) %>%
+aaa<- SINADEF.proj.t %>%
+  group_by(Departamento,range,.drop=F) %>%
   nest() %>%
   mutate(model = data %>%
-           map(~glm(deaths ~ t+AÑO+
-                                covid+
+           map(~glm(deaths ~ ns(week2,3) +
+                      fourier+
+                      covid+
                       offset(log(population)),
                     family = quasipoisson,
                     na.action = na.exclude,
                     data = .))) %>%
-  mutate(res=map2(model,data,residuals,type="deviance"),
-         Pred = map2(model, data, predict)) %>%
-  unnest(c(Pred, res,data))
+  mutate(res=map2(model,data,residuals,type="deviance")) %>%
+  unnest(c(data,res))
 
-
-
-
-###
-aaa %>% filter(range=="a80") %>%
-  nest() %>%
-    mutate(model1 = data %>% map(~glm(deaths ~  ns(t,3)+
-                                        AÑO+covid+
-   dplyr::lag(res, 1)+
-   offset(log(population)),
-   family = quasipoisson,
-   data = .)),
-   model2 = data %>% map(~glm(deaths ~  ns(t,3)+
-                                AÑO+covid+
-                                dplyr::lag(log(deaths), 1)+
-                                offset(log(population)),
-                              family = quasipoisson,
-                              data = .)),
-   model3 = data %>% map(~glm(deaths ~  t+
-                                AÑO+covid+
-                                dplyr::lag(res, 1)+
-                                offset(log(population)),
-                              family = quasipoisson,
-                              data = .))) %>%
-   mutate(Pred1 = map2(model1, data, predict),
-          Pred2 = map2(model2, data, predict)) %>%
-   unnest(c(Pred1,Pred2, data)) %>%
-     ggplot() +
-        facet_wrap(~Departamento,scales = "free")+
-          geom_point(aes(t,deaths),alpha=.1) +
-            geom_line(aes(t,exp(Pred1),colour="ns.res"))+
-            geom_line(aes(t,exp(Pred2),colour="t.res"))+
-                theme_clean()
-
-
-
+# aaa$covid<-as.factor(aaa$covid)
+# aaa$Departamento<-as.factor(aaa$Departamento)
+# aaa$range<-as.factor(aaa$range)
+# aaa$res<-as.numeric(aaa$res)
 
 
 fit<-aaa %>%
   group_by(Departamento,range) %>%
-  do(its.covid = glance(glm(deaths ~ t+AÑO+
-                              covid+
-                              dplyr::lag(res, 1)+
+  do(its.covid = glance(glm(deaths ~ ns(week2,3)+fourier+
+                              covid+lag(res,1)+
                               offset(log(population)),
                             family = quasipoisson,
                             data=.))) %>%
@@ -106,48 +96,45 @@ fit<-aaa %>%
          df=df.null-df.residual,
          p= pchisq(dif.dev, df, lower.tail=FALSE))
 
-ggplot(fit)+geom_histogram(aes(fit))
-ggplot(fit)+geom_histogram(aes(p))
+#ggplot(fit)+geom_histogram(aes(fit),bins = 60)
+#ggplot(fit)+geom_histogram(aes(p),bins = 60)
+
 
 #H0: 'the model as a whole is no better than the null model'.
 #' Since this has been rejected (p<.05), we conclude that the data are not
 #' consistent with the null model.
 
+#
+#
+#
+# tt <- aaa %>% left_join(SINADEF.causes) %>%
+#   mutate(year = lubridate::year(Date)) %>% filter(year != 2017) %>%
+#   group_by(Departamento,range,week2) %>%
+#   summarise    (m =  case_when (week2 < start ~ mean(deaths,na.rm=T)),
+#                 m2 = case_when (week2 >= end ~ mean(deaths,na.rm=T))) %>%
+#   group_by(Departamento,range) %>%
+#   summarise(mean.prev = mean(m,na.rm=T),
+#             mean.post = mean(m2,na.rm=T),
+#             Change_registration = ((mean.post-mean.prev)/mean.prev)*.5)
+#
+
 ###
 
 its.covid.list4d.t <- aaa %>% group_by(Departamento,range) %>%
-  do(its.covid = tidy(coeftest(glm(deaths ~  t +
-                                     AÑO+
-                                     covid +
-                                     dplyr::lag(res, 1)+
+  do(its.covid = tidy(coeftest(glm(deaths ~ ns(week2,3) +
+                                     fourier+covid+lag(res,1)+#lag(deaths,1)+
                                      offset(log(population)),
-                                   family = quasipoisson,
+                                   family=quasipoisson,
                                    data=.)))) %>%
   unnest(cols = its.covid) %>%
-  mutate(low=exp(estimate)-1.96*std.error,
-         up=exp(estimate)+1.96*std.error) %>%
-  left_join (SINADEF.causal4.t) %>%
+  mutate(low=exp((estimate)-(1.96*std.error)),
+         up=exp((estimate)+(1.96*std.error))) %>%
+ left_join (SINADEF.causal4.t) %>%
   mutate(excess=(exp(estimate)-1)/exp(estimate)*tot)
-
-
-
-# its.covid.list4d.t
-
-# its.covid.list4d.t %>% filter(term=="covid") %>%
-#   mutate(excess=case_when(term!="covid" ~ NA_real_,
-#                           T ~ excess),
-#          excess.low=(low-1)/low*tot,
-#          excess.up=(up-1)/up*tot) %>%
-#   summarise(excess=sum(excess,na.rm = T),
-#             excess.low=sum(excess.low,na.rm = T),
-#             excess.up=sum(excess.up,na.rm = T))
-
 
 e17.t<-its.covid.list4d.t %>%
   filter(term=="covid") %>%
-  mutate(excess=case_when(term!="covid" ~ NA_real_,
-                          T ~ excess),
-         excess.low=(low-1)/low*tot,
+  mutate(excess.low=(low-1)/low*tot,
          excess.up=(up-1)/up*tot)
 
 
@@ -159,10 +146,21 @@ fallecidos_covid.t<- fallecidos_covid %>%
   group_by(DEPARTAMENTO,range) %>% rename(Departamento=DEPARTAMENTO) %>%
   summarise(Covid_deaths= n())
 
+sub.reg <- sub.reg %>% group_by(Departamento) %>%
+  mutate (sub.mean=case_when(Departamento=="LAMBAYEQUE" ~ mean(sub.mean),
+                             T ~ sub.mean))
+
+sub.reg %>% filter (Departamento== "LAMBAYEQUE") %>% select(AÑO,sub.mean)
+
+sub.reg %>% filter (Departamento== "AMAZONAS") %>% select(AÑO,sub.mean)
 
 FINAL5.t<-e17.t%>%
   left_join(fallecidos_covid.t)%>%
   left_join(sub.reg) %>%
+  group_by(Departamento) %>%
+  #mutate(sub.mean=max(sub.mean)) %>%
+  filter (AÑO=='2019')%>%
+  filter (!is.na(sub.mean))%>%
   mutate(Covid_deaths = ifelse(is.na(Covid_deaths), 0, Covid_deaths))
 
 
@@ -178,33 +176,36 @@ tateti.t<-FINAL5.t%>%
 
 tateti6.t<- tateti.t %>%
   group_by(Departamento,range)%>%
-  mutate(complete.covid = case_when(
-    Covid_deaths > excess_deaths.sum ~
-      (Covid_deaths-excess_deaths.sum),
-    T ~ 0),
-    excess_deaths.sum = case_when(
-      p.value>=.05 ~ 0,
-      T ~ excess_deaths.sum),
-    excess.low = case_when(
-      p.value>=.05 ~ 0,
-      T ~ excess.low),
-    excess.up = case_when(
-      p.value>=.05 ~ 0,
-      T ~ excess.up),
-    sub.mean = case_when(
-      sub.mean > 1 ~ 1,
-      T ~ sub.mean)
-  ) %>%
-  mutate (
-    excess.total.mean = excess_deaths.sum +
-      (excess_deaths.sum)*(1-sub.mean)+
-      complete.covid,
-    excess.total.low = excess.low +
-      (excess.low)*(1-sub.mean)+
-      complete.covid,
-    excess.total.up = excess.up  +
-      (excess.up)*(1-sub.mean)+
-      complete.covid)
+  mutate(
+    excess_deaths.sum = case_when(p.value >.05 ~ 0,
+                                  T ~ excess_deaths.sum),
+    excess.low = case_when(p.value >.05 ~ 0,
+                           T ~ excess.low),
+    excess.up = case_when(p.value >.05 ~ 0,
+                          T ~ excess.up),
+    excess.low = case_when(excess.low > excess_deaths.sum ~ 0,
+                           T ~ excess.low),
+    complete.covid = case_when(Covid_deaths > excess_deaths.sum ~
+                                 (Covid_deaths-excess_deaths.sum)),
+    excess.total.mean = case_when(excess_deaths.sum > 0 ~
+                                     (excess_deaths.sum + !is.na(complete.covid)) +
+                                    ((excess_deaths.sum - !is.na(complete.covid)) * ((1/sub.mean)-1)),
+                                  T ~ excess_deaths.sum + complete.covid),
+    excess.total.low = case_when(Covid_deaths > excess.low ~ Covid_deaths,
+                                 T ~ excess.low +
+                                   ((excess.low - !is.na(Covid_deaths)) * ((1/sub.mean)-1)) +
+                                   !is.na(Covid_deaths)),
+    excess.total.up = case_when(Covid_deaths > excess.up ~ Covid_deaths,
+                                T ~ excess.up +
+                                  ((excess.up - !is.na(Covid_deaths))*((1/sub.mean)-1))+
+                                  !is.na(Covid_deaths)),
+    excess.total.mean = case_when(excess.total.mean < excess.total.low ~
+                                    excess.total.low,
+                                  T ~ excess.total.mean),
+    excess.total.mean = case_when(
+      Covid_deaths > excess.total.mean ~
+        Covid_deaths,
+      T ~ excess.total.mean))
 
 t5.t<-tateti6.t %>% ungroup() %>%
   summarise(excess.registered.Naive=sum(excess_deaths.sum,na.rm = T),
@@ -214,107 +215,147 @@ t5.t<-tateti6.t %>% ungroup() %>%
             excess.l=sum(excess.total.low,na.rm = T),
             excess.u=sum(excess.total.up,na.rm = T))
 
-
-
 t5.t
 
 
 tateti6.t%>%group_by(range) %>%
-  summarise(`Excess registered (ER)`=sum(excess_deaths.sum),
-            `ER - Lower 95% CI`=sum(excess.low),
-            `ER - Upper 95% CI`=sum(excess.up)) %>%
+  summarise(`Excess registered (ER)`=sum(excess_deaths.sum,na.rm = T),
+            `ER - Lower 95% CI`=sum(excess.low,na.rm = T),
+            `ER - Upper 95% CI`=sum(excess.up,na.rm = T),
+            `Excess total` = sum(excess.total.mean,na.rm = T),
+            `Excess total low` = sum(excess.total.low,na.rm = T),
+            `Excess total up` = sum(excess.total.up,na.rm = T)) %>%
   adorn_totals()
 
 
+tateti6.t%>%group_by(Departamento) %>%
+  summarise(`Excess registered (ER)`=sum(excess_deaths.sum,na.rm = T),
+            `ER - Lower 95% CI`=sum(excess.low,na.rm = T),
+            `ER - Upper 95% CI`=sum(excess.up,na.rm = T),
+            `Excess total` = sum(excess.total.mean,na.rm = T),
+            `Excess total low` = sum(excess.total.low,na.rm = T),
+            `Excess total up` = sum(excess.total.up,na.rm = T)) %>%
+  adorn_totals()
 
 
 #
-# ###
-# aaa %>% filter(Departamento=="CALLAO") %>%
-#   nest() %>%
-#     mutate(model1 = data %>% map(~glm(deaths ~ # ns(t,3)+
-#                                         AÑO+covid+
-#    dplyr::lag(res, 1)+
-#    offset(log(population)),
-#    family = quasipoisson,
-#    data = .)),
-#    model2 = data %>% map(~glm(deaths ~  bs(t,3)+
-#                                 AÑO+covid+
-#                                 dplyr::lag(log(deaths), 1)+
-#                                 offset(log(population)),
-#                               family = quasipoisson,
-#                               data = .)),
-#    model3 = data %>% map(~glm(deaths ~  poly(t,3)+
-#                                 AÑO+covid+
-#                                 dplyr::lag(res, 1)+
-#                                 offset(log(population)),
-#                               family = quasipoisson,
-#                               data = .)),
-#    model4 = data %>% map(~glm(deaths ~  t+
-#                                 AÑO+covid+
-#                                 dplyr::lag(res, 1)+
-#                                 offset(log(population)),
-#                               family = quasipoisson,
-#                               data = .)),
-#    model5= data %>% map(~glm(deaths ~  ns(t,3)+
-#                                 AÑO+covid+
-#                                 dplyr::lag(res, 1)+fourier+
-#                                 offset(log(population)),
-#                               family = quasipoisson,
-#                               data = .)),
-#    model6 = data %>% map(~glm(deaths ~  bs(t,3)+
-#                                 AÑO+covid+
-#                                 dplyr::lag(res, 1)+fourier+
-#                                 offset(log(population)),
-#                               family = quasipoisson,
-#                               data = .)),
-#    model7 = data %>% map(~glm(deaths ~  poly(t,3)+
-#                                 AÑO+covid+
-#                                 dplyr::lag(res, 1)+fourier+
-#                                 offset(log(population)),
-#                               family = quasipoisson,
-#                               data = .)),
-#    model8 = data %>% map(~glm(deaths ~  t+
-#                                 AÑO+covid+
-#                                 dplyr::lag(res, 1)+fourier+
-#                                 offset(log(population)),
-#                               family = quasipoisson,
-#                               data = .))) %>%
-#    mutate(Pred1 = map2(model1, data, predict),
-#           Pred2 = map2(model2, data, predict),
-#           Pred3 = map2(model3, data, predict),
-#           Pred4 = map2(model4, data, predict),
-#           Pred5 = map2(model5, data, predict),
-#           Pred6 = map2(model6, data, predict),
-#           Pred7 = map2(model7, data, predict),
-#           Pred8 = map2(model8, data, predict)) %>%
-#    unnest(c(Pred1,Pred2, Pred3, Pred4, Pred5, Pred6, Pred7, Pred8, data)) %>%
-#      ggplot() +
-#         facet_wrap(~range,scales = "free")+
-#           geom_point(aes(t,deaths),alpha=.1) +
-#             geom_line(aes(t,exp(Pred1),colour="ns.res"))+
-#             geom_line(aes(t,exp(Pred2),colour="bs.log.d"))+
-#             #geom_line(aes(t,exp(Pred3),colour="poly.res"))+
-#             #geom_line(aes(t,exp(Pred4),colour="t.res"))+
-#                 theme_clean()+
-#   geom_line(aes(t,exp(Pred5),colour="ns.res.fourier"))+
-#   geom_line(aes(t,exp(Pred6),colour="bs.res.fourier"))
-#   #geom_line(aes(t,exp(Pred7),colour="poly.res.fourier"))+
-#   #geom_line(aes(t,exp(Pred8),colour="t.res.fourier"))
+
+sub.reniec<-Defunciones_reniec %>% pivot_longer(`2017`:`2019`) %>%
+  rename(AÑO=name,mort_RENIEC=value) %>%
+  left_join(sub.reg) %>% left_join(sina) %>% filter(!is.na(deaths.SINADEF)) %>%
+  mutate(predict.SINADEF=deaths.SINADEF*(1/(sub.mean)),
+         dif_RENIEC_predicted=mort_RENIEC/predict.SINADEF,
+         sub.RENIEC=deaths.SINADEF/mort_RENIEC,
+         testRENIEC=deaths.SINADEF*(1/sub.RENIEC)) %>% select(Departamento,AÑO,sub.RENIEC)
+
+sub.reniec
 
 
-##
 
-SINADEF %>%
-  filter (range=="a80" & AÑO !=2020) %>%
-  mutate(mes=month(FECHA))%>%
-  group_by(AÑO,mes) %>%
-  summarise (d=n()) %>%
-  ggplot () + geom_line(aes(mes, d,colour=AÑO)) +
-  scale_x_continuous(breaks = seq(0,12,1))
+FINAL5.t.reniec<-e17.t%>%
+  left_join(fallecidos_covid.t)%>%
+  left_join(sub.reniec) %>% group_by(Departamento) %>%
+  mutate(sub.mean=max(sub.RENIEC)) %>% filter (AÑO=="2019")%>%
+  mutate(Covid_deaths = ifelse(is.na(Covid_deaths), 0, Covid_deaths))
 
 
-SINADEF %>%
-  filter (range=="a80") %>%
-    group_by(AÑO) %>%
-  summarise (d=n())
+
+tateti.t.reniec<-FINAL5.t.reniec%>%
+  group_by(Departamento,
+           range,
+           sub.mean,
+           #mort.estim.edades.f,
+           Covid_deaths,p.value) %>%
+  summarise(excess_deaths.sum=mean(excess),
+            excess.low=mean(excess.low),
+            excess.up=mean(excess.up))
+
+tateti6.t.reniec<- tateti.t.reniec %>% #left_join(tt) %>%
+  group_by(Departamento,range)%>%
+  mutate(
+    excess_deaths.sum = case_when(p.value >.05 ~ 0,
+                                  T ~ excess_deaths.sum),
+    excess.low = case_when(p.value >.05 ~ 0,
+                           T ~ excess.low),
+    excess.up = case_when(p.value >.05 ~ 0,
+                          T ~ excess.up),
+    excess.low = case_when(excess.low > excess_deaths.sum ~ 0,
+                           T ~ excess.low),
+    complete.covid = case_when(Covid_deaths > excess_deaths.sum ~
+                                 (Covid_deaths-excess_deaths.sum)),
+    excess.total.mean = case_when(excess_deaths.sum > 0 ~
+                                    (excess_deaths.sum + !is.na(complete.covid)) +
+                                    ((excess_deaths.sum - !is.na(complete.covid)) * ((1/sub.mean)-1)),
+                                  T ~ excess_deaths.sum + complete.covid),
+    excess.total.low = case_when(Covid_deaths > excess.low ~ Covid_deaths,
+                                 T ~ excess.low +
+                                   ((excess.low - !is.na(Covid_deaths)) * ((1/sub.mean)-1)) +
+                                   !is.na(Covid_deaths)),
+    excess.total.up = case_when(Covid_deaths > excess.up ~ Covid_deaths,
+                                T ~ excess.up +
+                                  ((excess.up - !is.na(Covid_deaths))*((1/sub.mean)-1))+
+                                  !is.na(Covid_deaths)),
+    excess.total.mean = case_when(excess.total.mean < excess.total.low ~
+                                    excess.total.low,
+                                  T ~ excess.total.mean),
+    excess.total.mean = case_when(
+      Covid_deaths > excess.total.mean ~
+        Covid_deaths,
+      T ~ excess.total.mean))
+
+t5.t.reniec<-tateti6.t.reniec %>% ungroup() %>%
+  summarise(excess.registered.Naive=sum(excess_deaths.sum,na.rm = T),
+            excess.low=sum(excess.low,na.rm = T),
+            excess.up=sum(excess.up,na.rm = T),
+            excess=sum(excess.total.mean,na.rm = T),
+            excess.l=sum(excess.total.low,na.rm = T),
+            excess.u=sum(excess.total.up,na.rm = T))
+
+
+tateti6.t.reniec %>% filter (Departamento== "LAMBAYEQUE") %>%
+  summarise(`Excess registered (ER)`=sum(excess_deaths.sum,na.rm = T),
+            `ER - Lower 95% CI`=sum(excess.low,na.rm = T),
+            `ER - Upper 95% CI`=sum(excess.up,na.rm = T),
+            `Excess total` = sum(excess.total.mean,na.rm = T),
+            `Excess total low` = sum(excess.total.low,na.rm = T),
+            `Excess total up` = sum(excess.total.up,na.rm = T)) %>%
+  adorn_totals()
+
+
+dif.reniec<-as.data.frame(((t5.t[1,4]-t5.t.reniec[1,4])/t5.t.reniec[1,4])*100)
+dif.reniec.l<-as.data.frame(((t5.t[1,5]-t5.t.reniec[1,5])/t5.t.reniec[1,5])*100)
+dif.reniec.u<-as.data.frame(((t5.t[1,6]-t5.t.reniec[1,6])/t5.t.reniec[1,6])*100)
+
+t5.t
+t5.t.reniec
+
+
+
+###
+
+fit2 <- aaa %>% filter(range=="a80") %>%
+  group_by(Departamento) %>%
+  do (fit = glm(deaths ~ ns(week2,3) +
+                  fourier+
+                  lag (res,1) +
+                  covid+
+                  offset(log(population)) ,
+                family = quasipoisson,
+                data = .))
+
+aaa2 <- aaa %>% mutate(covid=0)
+
+
+fit1.aug <- aaa %>% filter(range=="a80") %>%
+  group_by(Departamento) %>%
+  nest() %>%
+  full_join(fit2) %>%
+  do(augment(.$fit[[1]], newdata = .$data[[1]],se_fit=T,type.predict = "response"))
+
+
+fit2.aug <-  aaa2 %>% filter(range=="a80") %>%
+  group_by(Departamento) %>%
+  nest() %>%
+  full_join(fit2) %>%
+  do(augment(.$fit[[1]], newdata = .$data[[1]],se_fit=T,type.predict = "response"))
+

@@ -4,7 +4,7 @@
 #### Compute and use exposure ratio deaths by age from registered mortality 2018 SINADEF (no better source) ####
 
 mortality.rate.age.sinadef<-SINADEF  %>% filter (!is.na(range)) %>%
-  group_by(AÑO, Departamento,range) %>% summarise(deaths=n()) %>%
+  group_by(AÑO, Departamento,range,.drop=F) %>% summarise(deaths=n()) %>%
   mutate(d=sum(deaths),prop=deaths/d)
 
 mortality.rate.age.sinadef$AÑO<-as.numeric(mortality.rate.age.sinadef$AÑO)
